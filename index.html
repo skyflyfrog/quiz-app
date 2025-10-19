@@ -47,9 +47,7 @@ button {
   overflow: hidden;
   display: flex;
 }
-.progressSegment {
-  height: 100%;
-}
+.progressSegment { height: 100%; }
 .red { background: #f44336; }
 .yellow { background: #ffca28; }
 .green { background: #4caf50; }
@@ -173,11 +171,16 @@ function goNext(){
   else showQuestion();
 }
 
+// ✅ 修正版：正確統計顏色邏輯
 function showStats(){
   quizBox.classList.add("hidden");
   statBox.classList.remove("hidden");
-  const counts = {red:0,yellow:0,green:0,blue:0};
-  deck.forEach(q=>counts[q.color] ? counts[q.color]++ : counts.red++);
+  const counts = { red:0, yellow:0, green:0, blue:0 };
+  deck.forEach(q => {
+    const c = q.color || "red";
+    if (Object.prototype.hasOwnProperty.call(counts, c)) counts[c]++;
+    else counts.red++;
+  });
   const total = deck.length;
   document.getElementById("statResult").innerHTML =
     `紅：${counts.red}　黃：${counts.yellow}　綠：${counts.green}　藍：${counts.blue}　<small>（總計 ${total} 題）</small>`;
