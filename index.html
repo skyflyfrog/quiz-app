@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>天翔流自我強化檢核表</title>
+<style>
+body {
+  font-family: "Noto Sans TC", sans-serif;
+  background: #f4f5f7;
+  text-align: center;
+  margin: 0;
+  padding: 40px 0;
+}
+h1 {
+  font-size: 2em;
+  margin-bottom: 30px;
+}
+.container {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  margin: 0 auto;
+  padding: 20px;
+  width: 85%;
+  max-width: 720px;
+}
+button {
+  font-size: 1.1em;
+  padding: 10px 24px;
+  margin: 10px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+#checkBtn { background: #008CBA; color: white; }
+#wrongBtn { background: #f44336; color: white; }
+#rightBtn { background: #4CAF50; color: white; }
+#nextBtn { background: #333; color: white; }
+.hidden { display: none; }
+.progressBar {
+  width: 100%;
+  height: 20px;
+  background: #ddd;
+  border-radius: 10px;
+  margin: 20px 0;
+  overflow: hidden;
+  display: flex;
+}
+.progressSegment {
+  height: 100%;
+}
+.red { background: #f44336; }
+.yellow { background: #ffca28; }
+.green { background: #4caf50; }
+.blue { background: #2196f3; }
+</style>
+</head>
+<body>
+<h1>天翔流自我強化檢核表</h1>
+
+<div class="container" id="setupBox">
+  <label>選擇單元：</label>
+  <select id="unitSelect">
+    <option>自然B1L2養分</option>
+  </select>
+  <label>　選擇小節：</label>
+  <select id="sectionSelect"></select><br>
+  <button id="loadBtn">載入題庫</button>
+</div>
+
+<div class="container hidden" id="quizBox">
+  <h3 id="progress"></h3>
+  <h2 id="question"></h2>
+  <p id="answer" class="hidden"></p>
+  <div>
+    <button id="checkBtn">對答案</button>
+    <button id="wrongBtn" class="hidden">答錯</button>
+    <button id="rightBtn" class="hidden">答對</button>
+    <button id="nextBtn" class="hidden">下一題</button>
+  </div>
+</div>
+
+<div class="container hidden" id="statBox">
+  <h2>📊 統計結果</h2>
+  <div id="progressContainer" class="progressBar"></div>
+  <p id="statResult"></p>
+  <button onclick="filterColor('red')" class="red">只刷紅色</button>
+  <button onclick="filterColor('yellow')" class="yellow">只刷黃色</button>
+  <button onclick="filterColor('green')" class="green">只刷綠色</button>
+  <button onclick="filterColor('blue')" class="blue">只刷藍色</button><br>
+  <button onclick="restartAll()">全部重刷</button>
+  <button onclick="backToSetup()">回主畫面</button>
+</div>
+
+<script>
+let allData = [];
+let deck = [];
+let idx = 0;
+let setupBox = document.getElementById("setupBox");
+let quizBox = document.getElementById("quizBox");
+let statBox = document.getElementById("statBox");
+let questionText = document.getElementById("question");
+let answerText = document.getElementById("answer");
+let progressText = document.getElementById("progress");
+let checkBtn = document.getElementById("checkBtn");
+let wrongBtn = document.getElementById("wrongBtn");
+let rightBtn = document.getElementById("rightBtn");
+let nextBtn = document.getElementById("nextBtn");
+let sectionSelect = document.getElementById("sectionSelect");
+
+document.getElementById("loadBtn").onclick = async ()=>{
+  try {
+    const sheetUrl = "https://script.google.com/macros/s/AKfycbyzdhcYNXrPhqtPh2jaIhoO3FNZ1r1FdxB7obTXKWosJ4HRWCRoMEWgLZUgqUs3lYtGEg/exec";
+    const res = await fetch(sheetUrl + "?sheet=自然B1L2養分");
+    allData = await res.json();
+    const sections = [...new Set(allData.map(q => q.小節))];
+    sectionSelect.innerHTML = "<option value=''>請選擇</option>" + sections.map(s => `<option>${s}</option>`).join("");
+  } catch (e) {
+    alert("⚠️ 無法載入資料，請確認 Apps Script 網址是否正確發布。");
+  }
+};
+
+sectionSelect.onchange = ()=>{
+  const selected = sectionSelect.value;
+  if(selected){
+    deck = allData.filter(q => q.小節 === selected);
+    deck.forEach(q => q.color = q.color || "red");
+    setupBox.classList.add("hidden");
+    quizBox.classList.remove("hidden");
+    idx = 0;
+    showQuestion();
+  }
+};
+
+function showQuestion(){
+  const q = deck[idx];
+  questionText.textContent = `${idx+1}. ${q.題目}`;
+  answerText.textContent = "答案：" + q.答案;
+  answerText.classList.add("hidden");
+  progressText.textContent = `第 ${idx+1}/${deck.length} 題　小節：${q.小節}`;
+  checkBtn.classList.remove("hidden");
+  wrongBtn.classList.add("hidden");
+  rightBtn.classList.add("hidden");
+  nextBtn.classList.add("hidden");
+}
+
+checkBtn.onclick = ()=>{
+  answerText.classList.remove("hidden");
+  checkBtn.classList.add("hidden");
+  wrongBtn.classList.remove("hidden");
+  rightBtn.classList.remove("hidden");
+};
+
+wrongBtn.onclick = ()=>{
+  deck[idx].color = "red";
+  goNext();
+};
+
+rightBtn.onclick = ()=>{
+  const q = deck[idx];
+  if(q.color === "red") q.color = "yellow";
+  else if(q.color === "yellow") q.color = "green";
+  else if(q.color === "green") q.color = "blue";
+  goNext();
+};
+
+nextBtn.onclick = ()=> goNext();
+
+function goNext(){
+  idx++;
+  if(idx >= deck.length) showStats();
+  else showQuestion();
+}
+
+function showStats(){
+  quizBox.classList.add("hidden");
+  statBox.classList.remove("hidden");
+  const counts = {red:0,yellow:0,green:0,blue:0};
+  deck.forEach(q=>counts[q.color] ? counts[q.color]++ : counts.red++);
+  const total = deck.length;
+  document.getElementById("statResult").innerHTML =
+    `紅：${counts.red}　黃：${counts.yellow}　綠：${counts.green}　藍：${counts.blue}　<small>（總計 ${total} 題）</small>`;
+  const bar = document.getElementById("progressContainer");
+  bar.innerHTML = "";
+  ["red","yellow","green","blue"].forEach(c=>{
+    const seg = document.createElement("div");
+    seg.classList.add("progressSegment", c);
+    seg.style.width = (counts[c]/total*100)+"%";
+    bar.appendChild(seg);
+  });
+}
+
+function filterColor(color){
+  deck = allData.filter(q => q.小節 === sectionSelect.value && q.color === color);
+  if(deck.length === 0){ alert("沒有這顏色的題目喔"); return; }
+  idx = 0;
+  statBox.classList.add("hidden");
+  quizBox.classList.remove("hidden");
+  showQuestion();
+}
+
+function restartAll(){
+  deck = allData.filter(q => q.小節 === sectionSelect.value);
+  idx = 0;
+  statBox.classList.add("hidden");
+  quizBox.classList.remove("hidden");
+  showQuestion();
+}
+
+function backToSetup(){
+  statBox.classList.add("hidden");
+  setupBox.classList.remove("hidden");
+}
+</script>
+</body>
+</html>
