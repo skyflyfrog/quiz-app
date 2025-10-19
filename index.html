@@ -5,32 +5,20 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0" />
 <title>天翔流自我強化檢核表</title>
 <style>
-/* === 強制亮色模式，修正 iPad Safari 深色主題顏色錯亂 === */
-:root {
-  color-scheme: light !important;
+:root { color-scheme: light !important; }
+@media (prefers-color-scheme: dark){
+  html,body{background-color:#f4f5f7!important;color:#000!important;}
 }
-@media (prefers-color-scheme: dark) {
-  html, body {
-    background-color: #f4f5f7 !important;
-    color: #000 !important;
-  }
-}
-
-/* === 主題色設定 === */
 :root{
-  --bg:#f4f5f7; --card:#fff; --muted:#64748b;
-  --red:#ef4444; --yellow:#f59e0b; --green:#22c55e; --blue:#3b82f6;
+  --bg:#f4f5f7;--card:#fff;--muted:#64748b;
+  --red:#ef4444;--yellow:#f59e0b;--green:#22c55e;--blue:#3b82f6;
   --barbg:#e5e7eb;
 }
-
 *{box-sizing:border-box}
 body{
   font-family:"Noto Sans TC",sans-serif;
   background:var(--bg);
-  margin:0;
-  text-align:center;
-  padding:28px 0;
-  color:#000;
+  margin:0;text-align:center;padding:28px 0;color:#000;
 }
 h1{margin:0 0 10px}
 p.desc{color:#555;margin:0 0 18px}
@@ -40,34 +28,20 @@ p.desc{color:#555;margin:0 0 18px}
   box-shadow:0 0 10px rgba(0,0,0,.08);
   margin:14px auto;
   padding:16px;
-  width:92%;
-  max-width:900px;
+  width:92%;max-width:900px;
   text-align:left;
 }
 .section-header{font-weight:700;margin:10px 0 6px}
 .small{color:var(--muted);font-size:.92rem}
-.progressBar{
-  width:100%;height:16px;
-  background:var(--barbg);
-  border-radius:8px;
-  overflow:hidden;
-  display:flex;
-}
+.progressBar{width:100%;height:16px;background:var(--barbg);border-radius:8px;overflow:hidden;display:flex;}
 .segment{height:100%}
-.red{background:var(--red)} .yellow{background:var(--yellow)}
-.green{background:var(--green)} .blue{background:var(--blue)}
-.btn{
-  font-size:1rem;padding:9px 14px;border:none;border-radius:8px;
-  cursor:pointer;margin:6px 6px 0 0
-}
+.red{background:var(--red)}.yellow{background:var(--yellow)}.green{background:var(--green)}.blue{background:var(--blue)}
+.btn{font-size:1rem;padding:9px 14px;border:none;border-radius:8px;cursor:pointer;margin:6px 6px 0 0}
 .btn-prim{background:#0ea5e9;color:#fff}
 .btn-dark{background:#334155;color:#fff}
 .btn-red{background:var(--red);color:#fff}
 .btn-ghost{background:#fff;border:1px solid #cbd5e1;color:#334155}
-.card{
-  background:#fff;border:1px solid #e5e7eb;
-  border-radius:12px;padding:12px;cursor:pointer;
-}
+.card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:12px;cursor:pointer;}
 .card:hover{box-shadow:0 4px 14px rgba(0,0,0,.08)}
 .row{display:flex;align-items:center;gap:8px;justify-content:space-between}
 .center{text-align:center}
@@ -83,23 +57,21 @@ img.question-img{max-width:100%;border-radius:10px;margin:10px 0}
 </head>
 <body>
 <h1>天翔流自我強化檢核表</h1>
-<p class="desc">紅色：刷爆0輪　｜　黃色：刷爆1輪　｜　綠色：刷爆2輪　｜　藍色：刷爆3輪</p>
+<p class="desc">紅：刷爆0輪　｜　黃：1輪　｜　綠：2輪　｜　藍：3輪</p>
 
-<!-- 首頁：單元 / 小節總覽 -->
 <div class="container" id="homeBox">
   <div class="row" style="margin-bottom:8px">
-    <div class="small">以下依照試算表的分頁順序與題目出現順序排列</div>
+    <div class="small">以下依照試算表的分頁順序與題目順序排列</div>
     <button id="refreshBtn" class="btn btn-ghost">重新整理</button>
   </div>
   <div id="overview">載入中…</div>
 </div>
 
-<!-- 測驗畫面 -->
 <div class="container hidden" id="quizBox">
   <div class="row small"><div id="crumb"></div><div id="progressText"></div></div>
   <div id="qText" class="q"></div>
-  <div id="aText" class="ans hidden"></div>
   <div id="imgWrap" class="hidden"></div>
+  <div id="aText" class="ans hidden"></div>
   <div class="center">
     <button id="checkBtn" class="btn btn-prim">對答案</button>
     <button id="wrongBtn" class="btn btn-red hidden">答錯</button>
@@ -107,7 +79,6 @@ img.question-img{max-width:100%;border-radius:10px;margin:10px 0}
   </div>
 </div>
 
-<!-- 結果統計中（3秒） -->
 <div class="container hidden" id="computingBox">
   <div class="spinner-wrap">
     <div class="spinner"></div>
@@ -115,7 +86,6 @@ img.question-img{max-width:100%;border-radius:10px;margin:10px 0}
   </div>
 </div>
 
-<!-- 結算畫面 -->
 <div class="container hidden" id="statBox">
   <div class="row"><div class="section-header" id="statTitle"></div>
     <div><button id="homeBtn" class="btn btn-ghost">回首頁</button></div>
@@ -131,14 +101,12 @@ img.question-img{max-width:100%;border-radius:10px;margin:10px 0}
       <button class="btn blue"  onclick="startPracticeByColor('blue')">只刷藍色</button>
       <button class="btn btn-dark" onclick="startPracticeByColor('all')">全部重刷</button>
     </div>
-    <button id="clearAllBtn" class="btn btn-ghost">清除所有刷題紀錄</button>
+    <button id="clearAllBtn" class="btn btn-ghost">清除所有紀錄</button>
   </div>
 </div>
 
 <script>
-/** ====== 你的 Apps Script 連結 ====== */
-const API = "https://script.google.com/macros/s/AKfycbyzdhcYNXrPhqtPh2jaIhoO3FNZ1r1FdxB7obTXKWosJ4HRWCRoMEWgLZUgqUs3lYtGEg/exec";
-/** ================================== */
+const API="https://script.google.com/macros/s/AKfycbyzdhcYNXrPhqtPh2jaIhoO3FNZ1r1FdxB7obTXKWosJ4HRWCRoMEWgLZUgqUs3lYtGEg/exec";
 
 const LS_PREFIX="quizProgress_";
 const overview=document.getElementById("overview");
@@ -175,7 +143,13 @@ async function loadSheetData(sheet){
   const rows=await r.json();
   const seen=new Set(),order=[],mapped=[];
   rows.forEach(raw=>{
-    const row={編號:trimS(raw["編號"]),小節:trimS(raw["小節"]),題目:trimS(raw["題目"]),答案:trimS(raw["答案"])};
+    const row={
+      編號:trimS(raw["編號"]),
+      小節:trimS(raw["小節"]),
+      題目:trimS(raw["題目"]),
+      答案:trimS(raw["答案"]),
+      圖片:trimS(raw["圖片"])||""
+    };
     if(!row.題目)return;
     mapped.push(row);
     if(row.小節&&!seen.has(row.小節)){seen.add(row.小節);order.push(row.小節);}
@@ -227,14 +201,20 @@ function startPracticeByColor(mode){
 
 function extractImageUrl(text){const m=text.match(/https?:\/\/[^\s"<]+/);if(!m)return null;const u=m[0];if(/\.(png|jpg|jpeg|gif)/i.test(u))return u;if(/drive\.google\.com\/uc\?id=/i.test(u))return u;return null;}
 function showQuestion(){
-  const q=session.deck[session.idx];crumb.textContent=`${session.sheet}／${session.section}`;
+  const q=session.deck[session.idx];
+  crumb.textContent=`${session.sheet}／${session.section}`;
   progressText.textContent=`第 ${session.idx+1}/${session.deck.length} 題`;
-  qText.textContent=`${q.編號?(q.編號+". "):""}${q.題目}`;aText.textContent=`答案：${q.答案}`;aText.classList.add("hidden");
-  const imgUrl=extractImageUrl(q.題目);
+  const qtext=q.題目.replace(/https?:\/\/[^\s"<]+/g,""); // 去掉網址
+  qText.textContent=`${q.編號?(q.編號+". "):""}${qtext}`;
+  aText.textContent=`答案：${q.答案}`;aText.classList.add("hidden");
+
+  const imgUrl=q.圖片||extractImageUrl(q.題目);
   if(imgUrl){imgWrap.innerHTML=`<img class="question-img" src="${imgUrl}" alt="題目圖片">`;imgWrap.classList.remove("hidden");}
   else{imgWrap.innerHTML="";imgWrap.classList.add("hidden");}
+
   checkBtn.classList.remove("hidden");wrongBtn.classList.add("hidden");rightBtn.classList.add("hidden");
 }
+
 checkBtn.onclick=()=>{aText.classList.remove("hidden");checkBtn.classList.add("hidden");wrongBtn.classList.remove("hidden");rightBtn.classList.remove("hidden");};
 wrongBtn.onclick=()=>{applyColor(session.deck[session.idx],"red");nextOrCompute();};
 rightBtn.onclick=()=>{const cur=session.deck[session.idx];const c=cur.color||"red";const next=(c==="red")?"yellow":(c==="yellow")?"green":(c==="green")?"blue":"blue";applyColor(cur,next);nextOrCompute();};
@@ -252,7 +232,7 @@ function nextOrCompute(){
 }
 
 function saveSection(sheet,section,list){localStorage.setItem(keyOf(sheet,section),JSON.stringify(list));}
-function showStatScreen(fromPractice=false){
+function showStatScreen(){
   quizBox.classList.add("hidden");computingBox.classList.add("hidden");statBox.classList.remove("hidden");homeBox.classList.add("hidden");
   document.getElementById("statTitle").textContent=`${session.sheet}／${session.section}`;
   const counts=countByColors(session.working);const total=session.working.length;
@@ -264,7 +244,7 @@ homeBtn.onclick=()=>{statBox.classList.add("hidden");computingBox.classList.add(
 clearAllBtn.onclick=()=>{if(confirm("確定要清除所有刷題紀錄嗎？")){Object.keys(localStorage).filter(k=>k.startsWith(LS_PREFIX)).forEach(k=>localStorage.removeItem(k));homeBtn.onclick();}};
 refreshBtn.onclick=async()=>{overview.innerHTML="載入中…";meta={sheets:[],data:{},sections:{}};await init();};
 
-async function init(){try{await loadSheets();await buildOverview();}catch(e){overview.innerHTML="⚠️ 載入失敗，請確認 Apps Script 網址可公開讀取。";console.error(e);}}
+async function init(){try{await loadSheets();await buildOverview();}catch(e){overview.innerHTML="⚠️ 載入失敗，請確認 Apps Script 網址可公開讀取。";console.error(e);} }
 init();
 </script>
 </body>
