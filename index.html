@@ -1,138 +1,123 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1.0" />
-<title>天翔流自我強化檢核表</title>
-<style>
-:root{
-  --bg:#f4f5f7; --card:#fff; --muted:#64748b;
-  --red:#ef4444; --yellow:#f59e0b; --green:#22c55e; --blue:#3b82f6;
-  --barbg:#e5e7eb;
-}
-*{box-sizing:border-box}
-body{font-family:"Noto Sans TC",sans-serif;background:var(--bg);margin:0;text-align:center;padding:28px 0}
-h1{margin:0 0 10px}
-p.desc{color:#555;margin:0 0 18px}
-.container{background:var(--card);border-radius:16px;box-shadow:0 0 10px rgba(0,0,0,.08);margin:14px auto;padding:16px;width:92%;max-width:900px;text-align:left}
-.section-header{font-weight:700;margin:10px 0 6px}
-.small{color:var(--muted);font-size:.92rem}
-.progressBar{width:100%;height:16px;background:var(--barbg);border-radius:8px;overflow:hidden;display:flex}
-.segment{height:100%}
-.red{background:var(--red)} .yellow{background:var(--yellow)} .green{background:var(--green)} .blue{background:var(--blue)}
-.btn{font-size:1rem;padding:9px 14px;border:none;border-radius:8px;cursor:pointer;margin:6px 6px 0 0}
-.btn-prim{background:#0ea5e9;color:#fff}
-.btn-dark{background:#334155;color:#fff}
-.btn-red{background:var(--red);color:#fff}
-.btn-ghost{background:#fff;border:1px solid #cbd5e1;color:#334155}
-.grid{display:grid;gap:10px}
-.grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}
-.grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}
-.card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:12px;cursor:pointer}
-.card:hover{box-shadow:0 4px 14px rgba(0,0,0,.08)}
-.row{display:flex;align-items:center;gap:8px;justify-content:space-between}
-.center{text-align:center}
-.q{font-weight:800;font-size:1.25rem;margin:10px 0}
-.ans{color:#000;font-size:1.25rem;margin:10px 0}
-.hidden{display:none}
-.spinner-wrap{display:flex;align-items:center;justify-content:center;height:180px;flex-direction:column;gap:10px}
-.spinner{width:44px;height:44px;border-radius:50%;border:6px solid #cbd5e1;border-top-color:#0ea5e9;animation:spin 1s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-@media (max-width:720px){
-  .grid-3{grid-template-columns:repeat(1,minmax(0,1fr))}
-  .grid-2{grid-template-columns:repeat(1,minmax(0,1fr))}
-}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>天翔流自我強化檢核表</title>
+  <style>
+    body {
+      font-family: "Noto Sans TC", sans-serif;
+      background-color: #f4f5f7;
+      margin: 0;
+      padding: 0;
+      text-align: center;
+    }
+    h1 {
+      margin-top: 30px;
+      font-size: 28px;
+      color: #222;
+    }
+    .quiz-box {
+      background: white;
+      max-width: 700px;
+      margin: 20px auto;
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    }
+    .btn {
+      font-size: 18px;
+      margin: 10px;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .btn-primary { background-color: #4A90E2; color: white; }
+    .btn-wrong { background-color: #E74C3C; color: white; }
+    .btn-correct { background-color: #27AE60; color: white; }
+    img {
+      max-width: 100%;
+      border-radius: 10px;
+      margin: 15px 0;
+    }
+    .answer {
+      margin-top: 10px;
+      font-size: 20px;
+      color: #000;
+      display: none;
+    }
+    .question-number {
+      color: #555;
+      font-size: 14px;
+      margin-bottom: 5px;
+    }
+  </style>
 </head>
 <body>
-<h1>天翔流自我強化檢核表</h1>
-<p class="desc">紅色：刷爆0輪　｜　黃色：刷爆1輪　｜　綠色：刷爆2輪　｜　藍色：刷爆3輪</p>
-
-<div class="container" id="homeBox">
-  <div class="row" style="margin-bottom:8px">
-    <div class="small">以下依照試算表的分頁順序與題目出現順序排列</div>
-    <button id="refreshBtn" class="btn btn-ghost">重新整理</button>
+  <h1>天翔流自我強化檢核表</h1>
+  <div class="quiz-box" id="quizBox">
+    <p>載入中...</p>
   </div>
-  <div id="overview"></div>
-</div>
 
-<div class="container hidden" id="quizBox">
-  <div class="row small"><div id="crumb"></div><div id="progressText"></div></div>
-  <div id="qText" class="q"></div>
-  <div id="aText" class="ans hidden"></div>
-  <div class="center">
-    <button id="checkBtn" class="btn btn-prim">對答案</button>
-    <button id="wrongBtn" class="btn btn-red hidden">答錯</button>
-    <button id="rightBtn" class="btn btn-prim hidden">答對</button>
-  </div>
-</div>
+  <script>
+    // 假設 quizData 已經透過 Apps Script 抓到
+    // 這裡用示範資料模擬
+    let quizData = [
+      { 題目: "看圖回答：https://drive.google.com/uc?id=1LLs8ea96v8gvxinxx3Ns8P7tzwM5w3y<br>A是？", 答案: "肺靜脈" },
+      { 題目: "細胞內提供能量的構造是？", 答案: "粒線體" }
+    ];
 
-<div class="container hidden" id="computingBox">
-  <div class="spinner-wrap">
-    <div class="spinner"></div>
-    <div class="small">結果統計中，請稍候…</div>
-  </div>
-</div>
+    let currentIndex = 0;
 
-<div class="container hidden" id="statBox">
-  <div class="row"><div class="section-header" id="statTitle"></div>
-    <div><button id="homeBtn" class="btn btn-ghost">回首頁</button></div>
-  </div>
-  <div id="statSummary" class="small"></div>
-  <div id="statBar" class="progressBar" style="margin:10px 0 6px"></div>
-  <div class="row small" style="margin-bottom:12px"><div>選擇要重刷的題目顏色：</div></div>
-  <div class="row">
-    <div>
-      <button class="btn red"   onclick="startPracticeByColor('red')">只刷紅色</button>
-      <button class="btn yellow"onclick="startPracticeByColor('yellow')">只刷黃色</button>
-      <button class="btn green" onclick="startPracticeByColor('green')">只刷綠色</button>
-      <button class="btn blue"  onclick="startPracticeByColor('blue')">只刷藍色</button>
-      <button class="btn btn-dark" onclick="startPracticeByColor('all')">全部重刷</button>
-    </div>
-    <button id="clearAllBtn" class="btn btn-ghost">清除所有刷題紀錄</button>
-  </div>
-</div>
+    function showQuestion() {
+      const quizBox = document.getElementById("quizBox");
+      const q = quizData[currentIndex];
+      quizBox.innerHTML = "";
 
-<script>
-const API="https://script.google.com/macros/s/AKfycbyzdhcYNXrPhqtPh2jaIhoO3FNZ1r1FdxB7obTXKWosJ4HRWCRoMEWgLZUgqUs3lYtGEg/exec";
-const LS_PREFIX="quizProgress_";
-const homeBox=document.getElementById("homeBox"),overview=document.getElementById("overview"),
-quizBox=document.getElementById("quizBox"),computingBox=document.getElementById("computingBox"),statBox=document.getElementById("statBox");
-const qText=document.getElementById("qText"),aText=document.getElementById("aText"),crumb=document.getElementById("crumb"),progressText=document.getElementById("progressText");
-const checkBtn=document.getElementById("checkBtn"),wrongBtn=document.getElementById("wrongBtn"),rightBtn=document.getElementById("rightBtn"),
-homeBtn=document.getElementById("homeBtn"),clearAllBtn=document.getElementById("clearAllBtn"),refreshBtn=document.getElementById("refreshBtn");
+      // 題號
+      let questionHTML = `<p class="question-number">第 ${currentIndex + 1}/${quizData.length} 題</p>`;
 
-let meta={sheets:[],data:{},sections:{}};
-let session={sheet:"",section:"",deck:[],idx:0,working:[],filterMode:"all",committed:false};
+      // 顯示題目文字
+      questionHTML += `<p style="font-size:20px;">${q.題目}</p>`;
 
-const keyOf=(s,h)=>`${LS_PREFIX}${s}__${h}`;
-const deepCopy=o=>JSON.parse(JSON.stringify(o));
-function countByColors(list){const c={red:0,yellow:0,green:0,blue:0};list.forEach(x=>c[x.color||"red"]=(c[x.color||"red"]||0)+1);return c;}
-function renderBar(el,counts,total){el.innerHTML="";["red","yellow","green","blue"].forEach(color=>{const seg=document.createElement("div");seg.className=`segment ${color}`;seg.style.width=(total?(counts[color]/total*100):0)+"%";el.appendChild(seg);});}
+      // 🔍 偵測圖片連結
+      const urlMatch = q.題目.match(/https?:\/\/[^\s"<]+/);
+      if (urlMatch && urlMatch[0].match(/\.(jpg|jpeg|png|gif)|drive\.google\.com\/uc\?id=/)) {
+        questionHTML += `<img src="${urlMatch[0]}" alt="題目圖片">`;
+      }
 
-async function loadSheets(){const r=await fetch(API+"?mode=sheets",{cache:"no-store"});const j=await r.json();meta.sheets=j.sheets||[];}
-async function loadSheetData(sheet){if(meta.data[sheet])return;const r=await fetch(API+"?sheet="+encodeURIComponent(sheet),{cache:"no-store"});const rows=await r.json();const seen=new Set(),order=[];rows.forEach(x=>{const s=(x["小節"]||"").toString().trim();if(s&&!seen.has(s)){seen.add(s);order.push(s);}});meta.data[sheet]=rows.map(r=>({編號:(r["編號"]||"").toString().trim(),小節:(r["小節"]||"").toString().trim(),題目:(r["題目"]||"").toString().trim(),答案:(r["答案"]||"").toString().trim(),})).filter(x=>x.題目);meta.sections[sheet]=order;}
-function getSavedSection(s,h){const raw=localStorage.getItem(keyOf(s,h));if(!raw)return null;try{return JSON.parse(raw);}catch{return null;}}
-async function buildOverview(){overview.innerHTML="";for(const s of meta.sheets){await loadSheetData(s);const wrap=document.createElement("div");wrap.className="card";const h=document.createElement("div");h.className="section-header";h.textContent=s;wrap.appendChild(h);const grid=document.createElement("div");grid.className="grid grid-3";for(const sec of meta.sections[s]){const total=meta.data[s].filter(r=>r.小節===sec).length;const saved=getSavedSection(s,sec);const counts=saved?countByColors(saved):{red:0,yellow:0,green:0,blue:0};const cell=document.createElement("div");cell.className="card";cell.onclick=()=>onChooseSection(s,sec);const title=document.createElement("div");title.innerHTML=`<div class='row'><div>${sec}</div><div class='small'>${saved?"已有紀錄":"尚無紀錄"}｜共 ${total} 題</div></div>`;const bar=document.createElement("div");bar.className="progressBar";bar.style.marginTop="6px";renderBar(bar,counts,total);cell.appendChild(title);cell.appendChild(bar);grid.appendChild(cell);}wrap.appendChild(grid);overview.appendChild(wrap);}}
+      // 放進畫面
+      quizBox.innerHTML = questionHTML;
 
-function onChooseSection(s,sec){session.sheet=s;session.section=sec;session.filterMode="all";session.committed=false;const base=meta.data[s].filter(r=>r.小節===sec).map(x=>({...x,color:"red"}));const saved=getSavedSection(s,sec);if(saved){base.forEach(b=>{const m=saved.find(z=>z.題目===b.題目&&z.小節===b.小節);if(m)b.color=m.color||"red";});session.working=base;showStatScreen();}else{session.working=base;startPracticeByColor("all");}}
+      // 顯示按鈕
+      quizBox.innerHTML += `
+        <button class="btn btn-primary" onclick="showAnswer()">對答案</button>
+        <div id="answerBox" class="answer"><p>${q.答案}</p></div>
+      `;
+    }
 
-function startPracticeByColor(m){session.filterMode=m;session.idx=0;session.deck=(m==="all")?deepCopy(session.working):deepCopy(session.working.filter(q=>q.color===m));if(session.deck.length===0){alert("這個顏色目前沒有題目唷");return;}homeBox.classList.add("hidden");statBox.classList.add("hidden");computingBox.classList.add("hidden");quizBox.classList.remove("hidden");showQuestion();}
-function showQuestion(){const q=session.deck[session.idx];crumb.textContent=`${session.sheet}／${session.section}`;progressText.textContent=`第 ${session.idx+1}/${session.deck.length} 題`;qText.textContent=`${q.編號?(q.編號+". "):""}${q.題目}`;aText.textContent=`答案：${q.答案}`;aText.classList.add("hidden");checkBtn.classList.remove("hidden");wrongBtn.classList.add("hidden");rightBtn.classList.add("hidden");}
-checkBtn.onclick=()=>{aText.classList.remove("hidden");checkBtn.classList.add("hidden");wrongBtn.classList.remove("hidden");rightBtn.classList.remove("hidden");};
-wrongBtn.onclick=()=>{applyColor(session.deck[session.idx],"red");nextOrCompute();};
-rightBtn.onclick=()=>{const cur=session.deck[session.idx];const c=cur.color||"red";const next=(c==="red")?"yellow":(c==="yellow")?"green":(c==="green")?"blue":"blue";applyColor(cur,next);nextOrCompute();};
-function applyColor(i,c){i.color=c;const w=session.working.find(x=>x.題目===i.題目&&x.小節===i.小節);if(w)w.color=c;}
-function nextOrCompute(){session.idx++;if(session.idx>=session.deck.length){quizBox.classList.add("hidden");computingBox.classList.remove("hidden");setTimeout(()=>{showStatScreen(true);saveSection(session.sheet,session.section,session.working);session.committed=true;},3000);}else showQuestion();}
+    function showAnswer() {
+      document.getElementById("answerBox").style.display = "block";
+      const quizBox = document.getElementById("quizBox");
+      quizBox.innerHTML += `
+        <button class="btn btn-wrong" onclick="nextQuestion(false)">答錯</button>
+        <button class="btn btn-correct" onclick="nextQuestion(true)">答對</button>
+      `;
+      document.querySelector(".btn-primary").style.display = "none";
+    }
 
-function saveSection(s,h,l){localStorage.setItem(keyOf(s,h),JSON.stringify(l));}
-function clearAllProgress(){Object.keys(localStorage).filter(k=>k.startsWith(LS_PREFIX)).forEach(k=>localStorage.removeItem(k));}
-function showStatScreen(fromPractice=false){quizBox.classList.add("hidden");computingBox.classList.add("hidden");statBox.classList.remove("hidden");homeBox.classList.add("hidden");document.getElementById("statTitle").textContent=`${session.sheet}／${session.section}`;const counts=countByColors(session.working),total=session.working.length;document.getElementById("statSummary").innerHTML=`紅：${counts.red}　黃：${counts.yellow}　綠：${counts.green}　藍：${counts.blue}　<small>（總計 ${total} 題）</small>`;renderBar(document.getElementById("statBar"),counts,total);}
-homeBtn.onclick=()=>{statBox.classList.add("hidden");computingBox.classList.add("hidden");quizBox.classList.add("hidden");homeBox.classList.remove("hidden");buildOverview();};
-clearAllBtn.onclick=()=>{if(confirm("確定要清除所有刷題紀錄嗎？（所有單元與小節）")){clearAllProgress();homeBtn.onclick();}};
-refreshBtn.onclick=async()=>{overview.innerHTML="載入中…";await init();};
-async function init(){homeBox.classList.remove("hidden");quizBox.classList.add("hidden");computingBox.classList.add("hidden");statBox.classList.add("hidden");await loadSheets();await buildOverview();}
-init();
-</script>
+    function nextQuestion(correct) {
+      currentIndex++;
+      if (currentIndex < quizData.length) {
+        showQuestion();
+      } else {
+        document.getElementById("quizBox").innerHTML = "<h2>本輪完成！</h2>";
+      }
+    }
+
+    // 初始載入
+    showQuestion();
+  </script>
 </body>
 </html>
