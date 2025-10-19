@@ -54,7 +54,19 @@
 *{box-sizing:border-box}
 body{font-family:"Noto Sans TC",sans-serif;background:var(--bg);margin:0;text-align:center;padding:28px 0;color:#000;}
 h1{margin:0 0 10px}
-p.desc{color:#555;margin:0 0 18px}
+p.desc {
+  color: #555;
+  margin: 6px 0 20px;
+  text-align: center;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  letter-spacing: 0.3px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px 12px;
+}
+
 .container{background:var(--card);border-radius:16px;box-shadow:0 0 10px rgba(0,0,0,.08);margin:14px auto;padding:16px;width:92%;max-width:900px;text-align:left;}
 .section-header{font-weight:700;margin:10px 0 6px}
 .small{color:var(--muted);font-size:.92rem}
