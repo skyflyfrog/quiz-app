@@ -5,29 +5,69 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0" />
 <title>天翔流自我強化檢核表</title>
 <style>
-:root{color-scheme:light !important;}
-@media (prefers-color-scheme:dark){
-  html,body{background-color:#f4f5f7 !important;color:#000 !important;}
+/* === 強制亮色模式，修正 iPad Safari 深色主題顏色錯亂 === */
+:root {
+  color-scheme: light !important;
 }
+@media (prefers-color-scheme: dark) {
+  html, body {
+    background-color: #f4f5f7 !important;
+    color: #000 !important;
+  }
+}
+
+/* === 主題色設定 === */
 :root{
-  --bg:#f4f5f7;--card:#fff;--muted:#64748b;
-  --red:#ef4444;--yellow:#f59e0b;--green:#22c55e;--blue:#3b82f6;
+  --bg:#f4f5f7; --card:#fff; --muted:#64748b;
+  --red:#ef4444; --yellow:#f59e0b; --green:#22c55e; --blue:#3b82f6;
   --barbg:#e5e7eb;
 }
+
 *{box-sizing:border-box}
-body{font-family:"Noto Sans TC",sans-serif;background:var(--bg);margin:0;text-align:center;padding:28px 0;color:#000;}
+body{
+  font-family:"Noto Sans TC",sans-serif;
+  background:var(--bg);
+  margin:0;
+  text-align:center;
+  padding:28px 0;
+  color:#000;
+}
 h1{margin:0 0 10px}
 p.desc{color:#555;margin:0 0 18px}
-.container{background:var(--card);border-radius:16px;box-shadow:0 0 10px rgba(0,0,0,.08);margin:14px auto;padding:16px;width:92%;max-width:900px;text-align:left;}
+.container{
+  background:var(--card);
+  border-radius:16px;
+  box-shadow:0 0 10px rgba(0,0,0,.08);
+  margin:14px auto;
+  padding:16px;
+  width:92%;
+  max-width:900px;
+  text-align:left;
+}
 .section-header{font-weight:700;margin:10px 0 6px}
 .small{color:var(--muted);font-size:.92rem}
-.progressBar{width:100%;height:16px;background:var(--barbg);border-radius:8px;overflow:hidden;display:flex;}
+.progressBar{
+  width:100%;height:16px;
+  background:var(--barbg);
+  border-radius:8px;
+  overflow:hidden;
+  display:flex;
+}
 .segment{height:100%}
-.red{background:var(--red)}.yellow{background:var(--yellow)}.green{background:var(--green)}.blue{background:var(--blue)}
-.btn{font-size:1rem;padding:9px 14px;border:none;border-radius:8px;cursor:pointer;margin:6px 6px 0 0}
-.btn-prim{background:#0ea5e9;color:#fff}.btn-dark{background:#334155;color:#fff}
-.btn-red{background:var(--red);color:#fff}.btn-ghost{background:#fff;border:1px solid #cbd5e1;color:#334155}
-.card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:12px;cursor:pointer;}
+.red{background:var(--red)} .yellow{background:var(--yellow)}
+.green{background:var(--green)} .blue{background:var(--blue)}
+.btn{
+  font-size:1rem;padding:9px 14px;border:none;border-radius:8px;
+  cursor:pointer;margin:6px 6px 0 0
+}
+.btn-prim{background:#0ea5e9;color:#fff}
+.btn-dark{background:#334155;color:#fff}
+.btn-red{background:var(--red);color:#fff}
+.btn-ghost{background:#fff;border:1px solid #cbd5e1;color:#334155}
+.card{
+  background:#fff;border:1px solid #e5e7eb;
+  border-radius:12px;padding:12px;cursor:pointer;
+}
 .card:hover{box-shadow:0 4px 14px rgba(0,0,0,.08)}
 .row{display:flex;align-items:center;gap:8px;justify-content:space-between}
 .center{text-align:center}
@@ -45,6 +85,7 @@ img.question-img{max-width:100%;border-radius:10px;margin:10px 0}
 <h1>天翔流自我強化檢核表</h1>
 <p class="desc">紅色：刷爆0輪　｜　黃色：刷爆1輪　｜　綠色：刷爆2輪　｜　藍色：刷爆3輪</p>
 
+<!-- 首頁：單元 / 小節總覽 -->
 <div class="container" id="homeBox">
   <div class="row" style="margin-bottom:8px">
     <div class="small">以下依照試算表的分頁順序與題目出現順序排列</div>
@@ -53,6 +94,7 @@ img.question-img{max-width:100%;border-radius:10px;margin:10px 0}
   <div id="overview">載入中…</div>
 </div>
 
+<!-- 測驗畫面 -->
 <div class="container hidden" id="quizBox">
   <div class="row small"><div id="crumb"></div><div id="progressText"></div></div>
   <div id="qText" class="q"></div>
@@ -65,6 +107,7 @@ img.question-img{max-width:100%;border-radius:10px;margin:10px 0}
   </div>
 </div>
 
+<!-- 結果統計中（3秒） -->
 <div class="container hidden" id="computingBox">
   <div class="spinner-wrap">
     <div class="spinner"></div>
@@ -72,6 +115,7 @@ img.question-img{max-width:100%;border-radius:10px;margin:10px 0}
   </div>
 </div>
 
+<!-- 結算畫面 -->
 <div class="container hidden" id="statBox">
   <div class="row"><div class="section-header" id="statTitle"></div>
     <div><button id="homeBtn" class="btn btn-ghost">回首頁</button></div>
@@ -92,29 +136,8 @@ img.question-img{max-width:100%;border-radius:10px;margin:10px 0}
 </div>
 
 <script>
-/* ===== 允許題目中顯示 <img> ===== */
-function sanitizeQuestionHTML(raw){
-  const wrap=document.createElement('div');
-  wrap.innerHTML=raw??'';
-  const ALLOW=new Set(['img','br','b','strong','i','em','span']);
-  const all=wrap.querySelectorAll('*');
-  for(const el of all){
-    const tag=el.tagName.toLowerCase();
-    if(!ALLOW.has(tag)){const t=document.createTextNode(el.textContent||'');el.replaceWith(t);continue;}
-    if(tag==='img'){
-      el.removeAttribute('style');el.setAttribute('loading','lazy');
-      el.style.maxWidth='100%';el.style.borderRadius='6px';el.alt=el.alt||'題目圖片';
-      const src=el.getAttribute('src')||'';
-      if(/github\\.com\\/user-attachments\\/assets\\//i.test(src))el.src=src.replace('https://github.com','https://cdn.jsdelivr.net/gh');
-      const m=src.match(/\\/d\\/([A-Za-z0-9_-]+)\\//);if(m)el.src=`https://lh3.googleusercontent.com/d/${m[1]}=s1200`;
-      const m2=src.match(/drive\\.google\\.com\\/uc\\?[^#]*id=([A-Za-z0-9_-]+)/i);if(m2)el.src=`https://lh3.googleusercontent.com/d/${m2[1]}=s1200`;
-    }
-  }
-  return wrap.innerHTML;
-}
-
-/** ====== Apps Script 連結 ====== */
-const API="https://script.google.com/macros/s/AKfycbyzdhcYNXrPhqtPh2jaIhoO3FNZ1r1FdxB7obTXKWosJ4HRWCRoMEWgLZUgqUs3lYtGEg/exec";
+/** ====== 你的 Apps Script 連結 ====== */
+const API = "https://script.google.com/macros/s/AKfycbyzdhcYNXrPhqtPh2jaIhoO3FNZ1r1FdxB7obTXKWosJ4HRWCRoMEWgLZUgqUs3lYtGEg/exec";
 /** ================================== */
 
 const LS_PREFIX="quizProgress_";
@@ -202,23 +225,16 @@ function startPracticeByColor(mode){
   showQuestion();
 }
 
-function extractImageUrl(text){const m=text.match(/https?:\/\/[^\\s\"<]+/);if(!m)return null;const u=m[0];if(/\\.(png|jpg|jpeg|gif)/i.test(u))return u;if(/drive\\.google\\.com\\/uc\\?id=/i.test(u))return u;return null;}
-
+function extractImageUrl(text){const m=text.match(/https?:\/\/[^\s"<]+/);if(!m)return null;const u=m[0];if(/\.(png|jpg|jpeg|gif)/i.test(u))return u;if(/drive\.google\.com\/uc\?id=/i.test(u))return u;return null;}
 function showQuestion(){
-  const q=session.deck[session.idx];
-  crumb.textContent=`${session.sheet}／${session.section}`;
+  const q=session.deck[session.idx];crumb.textContent=`${session.sheet}／${session.section}`;
   progressText.textContent=`第 ${session.idx+1}/${session.deck.length} 題`;
-
-  // ✅ 支援題目內的 <img>
-  qText.innerHTML=`${q.編號?(q.編號+". "):""}${sanitizeQuestionHTML(q.題目)}`;
-
-  aText.textContent=`答案：${q.答案}`;aText.classList.add("hidden");
+  qText.textContent=`${q.編號?(q.編號+". "):""}${q.題目}`;aText.textContent=`答案：${q.答案}`;aText.classList.add("hidden");
   const imgUrl=extractImageUrl(q.題目);
   if(imgUrl){imgWrap.innerHTML=`<img class="question-img" src="${imgUrl}" alt="題目圖片">`;imgWrap.classList.remove("hidden");}
   else{imgWrap.innerHTML="";imgWrap.classList.add("hidden");}
   checkBtn.classList.remove("hidden");wrongBtn.classList.add("hidden");rightBtn.classList.add("hidden");
 }
-
 checkBtn.onclick=()=>{aText.classList.remove("hidden");checkBtn.classList.add("hidden");wrongBtn.classList.remove("hidden");rightBtn.classList.remove("hidden");};
 wrongBtn.onclick=()=>{applyColor(session.deck[session.idx],"red");nextOrCompute();};
 rightBtn.onclick=()=>{const cur=session.deck[session.idx];const c=cur.color||"red";const next=(c==="red")?"yellow":(c==="yellow")?"green":(c==="green")?"blue":"blue";applyColor(cur,next);nextOrCompute();};
@@ -227,7 +243,11 @@ function nextOrCompute(){
   session.idx++;
   if(session.idx>=session.deck.length){
     quizBox.classList.add("hidden");computingBox.classList.remove("hidden");
-    setTimeout(()=>{showStatScreen(true);saveSection(session.sheet,session.section,session.working);session.committed=true;},3000);
+    setTimeout(()=>{
+      showStatScreen(true);
+      saveSection(session.sheet,session.section,session.working);
+      session.committed=true;
+    },3000);
   }else showQuestion();
 }
 
