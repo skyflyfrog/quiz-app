@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>天翔流自我強化檢核表</title>
   <style>
     body {
@@ -45,17 +45,6 @@
       border-radius: 6px;
       margin-top: 10px;
     }
-    .progress-bar {
-      height: 12px;
-      border-radius: 6px;
-      background-color: #ddd;
-      margin: 10px 0;
-      overflow: hidden;
-    }
-    .progress-fill {
-      height: 100%;
-      transition: width 0.5s ease;
-    }
   </style>
 </head>
 <body>
@@ -63,42 +52,90 @@
   <div class="container" id="content">載入中...</div>
 
   <script>
+    // ✅ Google Apps Script 部署網址
     const sheetUrl = "https://script.google.com/macros/s/AKfycbyzdhcYNXrPhqtPh2jaIhoO3FNZ1r1FdxB7obTXKWosJ4HRWCRoMEWgLZUgqUs3lYtGEg/exec";
 
-    async function loadQuestions(){
-      const res = await fetch(sheetUrl);
-      const data = await res.json();
-      showHome(data);
+    // ✅ 新增：安全轉換題目 HTML，允許 img 標籤
+    function sanitizeQuestionHTML(raw) {
+      const wrap = document.createElement("div");
+      wrap.innerHTML = raw ?? "";
+
+      const ALLOW = new Set(["img", "br", "b", "strong", "i", "em", "span"]);
+      const all = wrap.querySelectorAll("*");
+
+      for (const el of all) {
+        const tag = el.tagName.toLowerCase();
+        if (!ALLOW.has(tag)) {
+          const text = document.createTextNode(el.textContent || "");
+          el.replaceWith(text);
+          continue;
+        }
+
+        if (tag === "img") {
+          el.removeAttribute("style");
+          el.setAttribute("loading", "lazy");
+          el.style.maxWidth = "100%";
+          el.style.borderRadius = "6px";
+          el.alt = el.alt || "題目圖片";
+
+          const src = el.getAttribute("src") || "";
+          if (/github\\.com\\/user-attachments\\/assets\\//i.test(src)) {
+            el.src = src.replace("https://github.com", "https://cdn.jsdelivr.net/gh");
+          }
+
+          const m = src.match(/\\/d\\/([A-Za-z0-9_-]+)\\//);
+          if (m) el.src = `https://lh3.googleusercontent.com/d/${m[1]}=s1200`;
+
+          const m2 = src.match(/drive\\.google\\.com\\/uc\\?[^#]*id=([A-Za-z0-9_-]+)/i);
+          if (m2) el.src = `https://lh3.googleusercontent.com/d/${m2[1]}=s1200`;
+        }
+      }
+      return wrap.innerHTML;
     }
 
-    function showHome(data){
+    // ✅ 載入資料
+    async function loadQuestions() {
+      try {
+        const res = await fetch(sheetUrl);
+        const data = await res.json();
+        showHome(data);
+      } catch (err) {
+        document.getElementById("content").textContent = "載入失敗，請稍後再試。";
+        console.error(err);
+      }
+    }
+
+    // ✅ 顯示首頁（保持原本邏輯）
+    function showHome(data) {
       const container = document.getElementById("content");
       container.innerHTML = "";
 
-      let title = document.createElement("p");
+      const title = document.createElement("p");
       title.textContent = "紅色：刷爆0輪，黃色：刷爆1輪，綠色：刷爆2輪，藍色：刷爆3輪";
       container.appendChild(title);
 
       let sections = {};
-      data.forEach(q=>{
-        if(!sections[q.unit]) sections[q.unit] = [];
+      data.forEach(q => {
+        if (!sections[q.unit]) sections[q.unit] = [];
         sections[q.unit].push(q);
       });
 
-      Object.keys(sections).forEach(unit=>{
-        let box = document.createElement("div");
+      Object.keys(sections).forEach(unit => {
+        const box = document.createElement("div");
         box.style.marginTop = "15px";
         box.innerHTML = `<h3>${unit}</h3>`;
-        sections[unit].forEach(q=>{
-          let subDiv = document.createElement("div");
+
+        sections[unit].forEach(q => {
+          const subDiv = document.createElement("div");
           subDiv.style.background = "#fafafa";
           subDiv.style.borderRadius = "6px";
           subDiv.style.padding = "8px";
           subDiv.style.margin = "5px 0";
-          // ✅ 支援 HTML 題目（例如 <img>）
-          subDiv.innerHTML = `${q.section}｜<br>${q.question}`;
+          // ✅ 使用安全 HTML 顯示題目
+          subDiv.innerHTML = `${q.section}｜<br>${sanitizeQuestionHTML(q.question)}`;
           box.appendChild(subDiv);
         });
+
         container.appendChild(box);
       });
     }
