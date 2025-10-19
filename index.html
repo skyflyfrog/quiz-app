@@ -5,45 +5,29 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0" />
 <title>天翔流自我強化檢核表</title>
 <style>
-:root { color-scheme: light !important; }
-@media (prefers-color-scheme: dark){
-  html,body{background-color:#f4f5f7!important;color:#000!important;}
-}
+:root{color-scheme:light!important;}
+@media(prefers-color-scheme:dark){html,body{background-color:#f4f5f7!important;color:#000!important;}}
 :root{
   --bg:#f4f5f7;--card:#fff;--muted:#64748b;
   --red:#ef4444;--yellow:#f59e0b;--green:#22c55e;--blue:#3b82f6;
   --barbg:#e5e7eb;
 }
 *{box-sizing:border-box}
-body{
-  font-family:"Noto Sans TC",sans-serif;
-  background:var(--bg);
-  margin:0;text-align:center;padding:28px 0;color:#000;
-}
+body{font-family:"Noto Sans TC",sans-serif;background:var(--bg);margin:0;text-align:center;padding:28px 0;color:#000;}
 h1{margin:0 0 10px}
 p.desc{color:#555;margin:0 0 18px}
-.container{
-  background:var(--card);
-  border-radius:16px;
-  box-shadow:0 0 10px rgba(0,0,0,.08);
-  margin:14px auto;
-  padding:16px;
-  width:92%;max-width:900px;
-  text-align:left;
-}
+.container{background:var(--card);border-radius:16px;box-shadow:0 0 10px rgba(0,0,0,.08);margin:14px auto;padding:16px;width:92%;max-width:900px;text-align:left;}
 .section-header{font-weight:700;margin:10px 0 6px}
 .small{color:var(--muted);font-size:.92rem}
 .progressBar{width:100%;height:16px;background:var(--barbg);border-radius:8px;overflow:hidden;display:flex;}
 .segment{height:100%}
 .red{background:var(--red)}.yellow{background:var(--yellow)}.green{background:var(--green)}.blue{background:var(--blue)}
 .btn{font-size:1rem;padding:9px 14px;border:none;border-radius:8px;cursor:pointer;margin:6px 6px 0 0}
-.btn-prim{background:#0ea5e9;color:#fff}
-.btn-dark{background:#334155;color:#fff}
-.btn-red{background:var(--red);color:#fff}
+.btn-prim{background:#0ea5e9;color:#fff}.btn-dark{background:#334155;color:#fff}.btn-red{background:var(--red);color:#fff}
 .btn-ghost{background:#fff;border:1px solid #cbd5e1;color:#334155}
 .card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:12px;cursor:pointer;}
 .card:hover{box-shadow:0 4px 14px rgba(0,0,0,.08)}
-.row{display:flex;align-items:center;gap:8px;justify-content:space-between}
+.row{display:flex;align-items:center;gap:8px;justify-content:space-between;flex-wrap:wrap}
 .center{text-align:center}
 .q{font-weight:800;font-size:1.25rem;margin:10px 0}
 .ans{color:#000;font-size:1.25rem;margin:10px 0}
@@ -52,19 +36,30 @@ p.desc{color:#555;margin:0 0 18px}
 .spinner{width:44px;height:44px;border-radius:50%;border:6px solid #cbd5e1;border-top-color:#0ea5e9;animation:spin 1s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 img.question-img{max-width:100%;border-radius:10px;margin:10px 0}
-@media (max-width:720px){.card{padding:10px}}
+@media(max-width:720px){.card{padding:10px}}
 </style>
 </head>
 <body>
 <h1>天翔流自我強化檢核表</h1>
-<p class="desc">紅：刷爆0輪　｜　黃：1輪　｜　綠：2輪　｜　藍：3輪</p>
+<p class="desc">紅：0輪　｜　黃：1輪　｜　綠：2輪　｜　藍：3輪</p>
 
 <div class="container" id="homeBox">
+  <div id="subjectFilter" class="row small" style="margin-bottom:10px">
+    <label><input type="checkbox" value="國文">國文</label>
+    <label><input type="checkbox" value="英文">英文</label>
+    <label><input type="checkbox" value="數學">數學</label>
+    <label><input type="checkbox" value="自然">自然</label>
+    <label><input type="checkbox" value="地理">地理</label>
+    <label><input type="checkbox" value="歷史">歷史</label>
+    <label><input type="checkbox" value="公民">公民</label>
+    <button id="selectAllBtn" class="btn btn-ghost">全科勾選</button>
+    <button id="clearAllBtn2" class="btn btn-ghost">全科取消</button>
+  </div>
   <div class="row" style="margin-bottom:8px">
-    <div class="small">以下依照試算表的分頁順序與題目順序排列</div>
+    <div class="small">勾選欲載入科目後顯示｜登入者：<span id="userNameDisplay"></span></div>
     <button id="refreshBtn" class="btn btn-ghost">重新整理</button>
   </div>
-  <div id="overview">載入中…</div>
+  <div id="overview">請先勾選科目</div>
 </div>
 
 <div class="container hidden" id="quizBox">
@@ -76,6 +71,7 @@ img.question-img{max-width:100%;border-radius:10px;margin:10px 0}
     <button id="checkBtn" class="btn btn-prim">對答案</button>
     <button id="wrongBtn" class="btn btn-red hidden">答錯</button>
     <button id="rightBtn" class="btn btn-prim hidden">答對</button>
+    <button id="cancelBtn" class="btn btn-ghost">回首頁（不儲存）</button>
   </div>
 </div>
 
@@ -95,11 +91,11 @@ img.question-img{max-width:100%;border-radius:10px;margin:10px 0}
   <div class="row small" style="margin-bottom:12px"><div>選擇要重刷的題目顏色：</div></div>
   <div class="row">
     <div>
-      <button class="btn red"   onclick="startPracticeByColor('red')">只刷紅色</button>
-      <button class="btn yellow"onclick="startPracticeByColor('yellow')">只刷黃色</button>
-      <button class="btn green" onclick="startPracticeByColor('green')">只刷綠色</button>
-      <button class="btn blue"  onclick="startPracticeByColor('blue')">只刷藍色</button>
-      <button class="btn btn-dark" onclick="startPracticeByColor('all')">全部重刷</button>
+      <button class="btn red"   onclick="startPracticeByColor('red')">紅</button>
+      <button class="btn yellow"onclick="startPracticeByColor('yellow')">黃</button>
+      <button class="btn green" onclick="startPracticeByColor('green')">綠</button>
+      <button class="btn blue"  onclick="startPracticeByColor('blue')">藍</button>
+      <button class="btn btn-dark" onclick="startPracticeByColor('all')">全部</button>
     </div>
     <button id="clearAllBtn" class="btn btn-ghost">清除所有紀錄</button>
   </div>
@@ -107,8 +103,12 @@ img.question-img{max-width:100%;border-radius:10px;margin:10px 0}
 
 <script>
 const API="https://script.google.com/macros/s/AKfycbyzdhcYNXrPhqtPh2jaIhoO3FNZ1r1FdxB7obTXKWosJ4HRWCRoMEWgLZUgqUs3lYtGEg/exec";
+let userName=localStorage.getItem("quizUserName");
+if(!userName){userName=prompt("請輸入您的姓名：");if(!userName)userName="未命名";localStorage.setItem("quizUserName",userName);}
+document.getElementById("userNameDisplay").textContent=userName;
 
-const LS_PREFIX="quizProgress_";
+const LS_PREFIX=`quizProgress_${userName}_`;
+
 const overview=document.getElementById("overview");
 const homeBox=document.getElementById("homeBox");
 const quizBox=document.getElementById("quizBox");
@@ -125,6 +125,7 @@ const rightBtn=document.getElementById("rightBtn");
 const homeBtn=document.getElementById("homeBtn");
 const clearAllBtn=document.getElementById("clearAllBtn");
 const refreshBtn=document.getElementById("refreshBtn");
+const cancelBtn=document.getElementById("cancelBtn");
 
 let meta={sheets:[],data:{},sections:{}};
 let session={sheet:"",section:"",deck:[],idx:0,working:[],filterMode:"all",committed:false};
@@ -137,45 +138,23 @@ function renderBar(el,counts,total){el.innerHTML="";["red","yellow","green","blu
 function getSavedSection(sheet,section){const raw=localStorage.getItem(keyOf(sheet,section));if(!raw)return null;try{return JSON.parse(raw);}catch{return null;}}
 
 async function loadSheets(){const r=await fetch(API+"?mode=sheets",{cache:"no-store"});const j=await r.json();meta.sheets=j.sheets||[];}
-async function loadSheetData(sheet){
-  if(meta.data[sheet])return;
-  const r=await fetch(API+"?sheet="+encodeURIComponent(sheet),{cache:"no-store"});
-  const rows=await r.json();
-  const seen=new Set(),order=[],mapped=[];
-  rows.forEach(raw=>{
-    const row={
-      編號:trimS(raw["編號"]),
-      小節:trimS(raw["小節"]),
-      題目:trimS(raw["題目"]),
-      答案:trimS(raw["答案"]),
-      圖片:trimS(raw["圖片"])||""
-    };
-    if(!row.題目)return;
-    mapped.push(row);
-    if(row.小節&&!seen.has(row.小節)){seen.add(row.小節);order.push(row.小節);}
-  });
-  meta.data[sheet]=mapped;
-  meta.sections[sheet]=order;
-}
+async function loadSheetData(sheet){if(meta.data[sheet])return;const r=await fetch(API+"?sheet="+encodeURIComponent(sheet),{cache:"no-store"});const rows=await r.json();const seen=new Set(),order=[],mapped=[];rows.forEach(raw=>{const row={編號:trimS(raw["編號"]),小節:trimS(raw["小節"]),題目:trimS(raw["題目"]),答案:trimS(raw["答案"]),圖片:trimS(raw["圖片"])||""};if(!row.題目)return;mapped.push(row);if(row.小節&&!seen.has(row.小節)){seen.add(row.小節);order.push(row.小節);}});meta.data[sheet]=mapped;meta.sections[sheet]=order;}
 
 async function buildOverview(){
   overview.innerHTML="";
+  const selectedSubjects=[...document.querySelectorAll('#subjectFilter input:checked')].map(x=>x.value);
+  if(selectedSubjects.length===0){overview.textContent="請先勾選科目";return;}
   for(const sheet of meta.sheets){
+    if(!selectedSubjects.some(s=>sheet.startsWith(s)))continue;
     await loadSheetData(sheet);
-    const wrap=document.createElement("div");
-    wrap.className="card";
-    const h=document.createElement("div");
-    h.className="section-header";h.textContent=sheet;
-    wrap.appendChild(h);
+    const wrap=document.createElement("div");wrap.className="card";
+    const h=document.createElement("div");h.className="section-header";h.textContent=sheet;wrap.appendChild(h);
     const list=document.createElement("div");
     for(const sec of meta.sections[sheet]){
-      const rows=meta.data[sheet].filter(r=>r.小節===sec);
-      const total=rows.length;if(total===0)continue;
-      const saved=getSavedSection(sheet,sec);
-      const counts=saved?countByColors(saved):{red:0,yellow:0,green:0,blue:0};
+      const rows=meta.data[sheet].filter(r=>r.小節===sec);const total=rows.length;if(total===0)continue;
+      const saved=getSavedSection(sheet,sec);const counts=saved?countByColors(saved):{red:0,yellow:0,green:0,blue:0};
       const cell=document.createElement("div");cell.className="card";cell.style.marginBottom="10px";cell.onclick=()=>onChooseSection(sheet,sec);
-      const title=document.createElement("div");
-      title.innerHTML=`<div class='row'><div><b>${sec}</b></div><div class='small'>${saved?"已有紀錄":"尚無紀錄"}｜共 ${total} 題</div></div>`;
+      const title=document.createElement("div");title.innerHTML=`<div class='row'><div><b>${sec}</b></div><div class='small'>${saved?"已有紀錄":"尚無紀錄"}｜共 ${total} 題</div></div>`;
       const bar=document.createElement("div");bar.className="progressBar";bar.style.marginTop="6px";renderBar(bar,counts,total);
       cell.appendChild(title);cell.appendChild(bar);list.appendChild(cell);
     }
@@ -204,14 +183,12 @@ function showQuestion(){
   const q=session.deck[session.idx];
   crumb.textContent=`${session.sheet}／${session.section}`;
   progressText.textContent=`第 ${session.idx+1}/${session.deck.length} 題`;
-  const qtext=q.題目.replace(/https?:\/\/[^\s"<]+/g,""); // 去掉網址
+  const qtext=q.題目.replace(/https?:\/\/[^\s"<]+/g,"");
   qText.textContent=`${q.編號?(q.編號+". "):""}${qtext}`;
   aText.textContent=`答案：${q.答案}`;aText.classList.add("hidden");
-
   const imgUrl=q.圖片||extractImageUrl(q.題目);
   if(imgUrl){imgWrap.innerHTML=`<img class="question-img" src="${imgUrl}" alt="題目圖片">`;imgWrap.classList.remove("hidden");}
   else{imgWrap.innerHTML="";imgWrap.classList.add("hidden");}
-
   checkBtn.classList.remove("hidden");wrongBtn.classList.add("hidden");rightBtn.classList.add("hidden");
 }
 
@@ -227,24 +204,23 @@ function nextOrCompute(){
       showStatScreen(true);
       saveSection(session.sheet,session.section,session.working);
       session.committed=true;
-    },3000);
+    },1500);
   }else showQuestion();
 }
 
+cancelBtn.onclick=()=>{if(confirm("確定要回首頁？本次刷題將不紀錄進度。")){quizBox.classList.add("hidden");homeBox.classList.remove("hidden");buildOverview();}};
 function saveSection(sheet,section,list){localStorage.setItem(keyOf(sheet,section),JSON.stringify(list));}
-function showStatScreen(){
-  quizBox.classList.add("hidden");computingBox.classList.add("hidden");statBox.classList.remove("hidden");homeBox.classList.add("hidden");
-  document.getElementById("statTitle").textContent=`${session.sheet}／${session.section}`;
-  const counts=countByColors(session.working);const total=session.working.length;
-  document.getElementById("statSummary").innerHTML=`紅：${counts.red}　黃：${counts.yellow}　綠：${counts.green}　藍：${counts.blue}　<small>（總計 ${total} 題）</small>`;
-  renderBar(document.getElementById("statBar"),counts,total);
-}
+function showStatScreen(){quizBox.classList.add("hidden");computingBox.classList.add("hidden");statBox.classList.remove("hidden");homeBox.classList.add("hidden");document.getElementById("statTitle").textContent=`${session.sheet}／${session.section}`;const counts=countByColors(session.working);const total=session.working.length;document.getElementById("statSummary").innerHTML=`紅：${counts.red}　黃：${counts.yellow}　綠：${counts.green}　藍：${counts.blue}　<small>（共 ${total} 題）</small>`;renderBar(document.getElementById("statBar"),counts,total);}
 
 homeBtn.onclick=()=>{statBox.classList.add("hidden");computingBox.classList.add("hidden");quizBox.classList.add("hidden");homeBox.classList.remove("hidden");buildOverview();};
-clearAllBtn.onclick=()=>{if(confirm("確定要清除所有刷題紀錄嗎？")){Object.keys(localStorage).filter(k=>k.startsWith(LS_PREFIX)).forEach(k=>localStorage.removeItem(k));homeBtn.onclick();}};
+clearAllBtn.onclick=()=>{if(confirm("確定要清除所有紀錄嗎？")){Object.keys(localStorage).filter(k=>k.startsWith(LS_PREFIX)).forEach(k=>localStorage.removeItem(k));homeBtn.onclick();}};
 refreshBtn.onclick=async()=>{overview.innerHTML="載入中…";meta={sheets:[],data:{},sections:{}};await init();};
 
-async function init(){try{await loadSheets();await buildOverview();}catch(e){overview.innerHTML="⚠️ 載入失敗，請確認 Apps Script 網址可公開讀取。";console.error(e);} }
+document.getElementById("selectAllBtn").onclick=()=>{document.querySelectorAll('#subjectFilter input').forEach(cb=>cb.checked=true);buildOverview();};
+document.getElementById("clearAllBtn2").onclick=()=>{document.querySelectorAll('#subjectFilter input').forEach(cb=>cb.checked=false);overview.innerHTML="請先勾選科目";};
+document.querySelectorAll('#subjectFilter input').forEach(cb=>cb.onchange=()=>buildOverview());
+
+async function init(){try{await loadSheets();await buildOverview();}catch(e){overview.innerHTML="⚠️ 載入失敗，請確認 Apps Script 可公開讀取。";console.error(e);} }
 init();
 </script>
 </body>
