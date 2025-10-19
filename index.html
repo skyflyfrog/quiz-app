@@ -14,7 +14,12 @@ body {
 }
 h1 {
   font-size: 2em;
-  margin-bottom: 30px;
+  margin-bottom: 20px;
+}
+p.description {
+  color: #555;
+  margin-bottom: 25px;
+  font-size: 1.05em;
 }
 .container {
   background: white;
@@ -52,16 +57,20 @@ button {
 .yellow { background: #ffca28; }
 .green { background: #4caf50; }
 .blue { background: #2196f3; }
+#question, #answer {
+  color: black;
+  font-size: 1.3em;
+  margin: 15px 0;
+}
 </style>
 </head>
 <body>
 <h1>天翔流自我強化檢核表</h1>
+<p class="description">選擇你要刷的單元 → 載入題庫 → 選擇小節 → 開始刷</p>
 
 <div class="container" id="setupBox">
   <label>選擇單元：</label>
-  <select id="unitSelect">
-    <option>自然B1L2養分</option>
-  </select>
+  <select id="unitSelect"></select>
   <label>　選擇小節：</label>
   <select id="sectionSelect"></select><br>
   <button id="loadBtn">載入題庫</button>
@@ -92,9 +101,10 @@ button {
 </div>
 
 <script>
-let allData = [];
+let allData = {};
 let deck = [];
 let idx = 0;
+let currentSheet = "";
 let currentSection = "";
 const sheetUrl = "https://script.google.com/macros/s/AKfycbyzdhcYNXrPhqtPh2jaIhoO3FNZ1r1FdxB7obTXKWosJ4HRWCRoMEWgLZUgqUs3lYtGEg/exec";
 
@@ -109,12 +119,29 @@ const wrongBtn = document.getElementById("wrongBtn");
 const rightBtn = document.getElementById("rightBtn");
 const nextBtn = document.getElementById("nextBtn");
 const sectionSelect = document.getElementById("sectionSelect");
+const unitSelect = document.getElementById("unitSelect");
+
+// 🚀 自動抓分頁名稱
+async function loadSheetList(){
+  try{
+    const res = await fetch(sheetUrl + "?mode=sheets");
+    const data = await res.json();
+    const sheets = data.sheets || [];
+    if(sheets.length === 0) throw new Error("No sheets found");
+    unitSelect.innerHTML = sheets.map(s => `<option value="${s}">${s}</option>`).join("");
+  }catch(e){
+    alert("⚠️ 無法取得試算表分頁清單，請確認 Apps Script 有回傳 sheets 陣列。");
+  }
+}
+
+document.addEventListener("DOMContentLoaded", loadSheetList);
 
 document.getElementById("loadBtn").onclick = async ()=>{
   try {
-    const res = await fetch(sheetUrl + "?sheet=自然B1L2養分");
-    allData = await res.json();
-    const sections = [...new Set(allData.map(q => q.小節))];
+    currentSheet = unitSelect.value;
+    const res = await fetch(sheetUrl + "?sheet=" + encodeURIComponent(currentSheet));
+    allData[currentSheet] = await res.json();
+    const sections = [...new Set(allData[currentSheet].map(q => q.小節))];
     sectionSelect.innerHTML = "<option value=''>請選擇</option>" + sections.map(s => `<option>${s}</option>`).join("");
   } catch (e) {
     alert("⚠️ 無法載入資料，請確認 Apps Script 網址是否正確發布。");
@@ -122,10 +149,9 @@ document.getElementById("loadBtn").onclick = async ()=>{
 };
 
 sectionSelect.onchange = ()=>{
-  const selected = sectionSelect.value;
-  if(selected){
-    currentSection = selected;
-    deck = allData.filter(q => q.小節 === selected);
+  currentSection = sectionSelect.value;
+  if(currentSection){
+    deck = allData[currentSheet].filter(q => q.小節 === currentSection);
     deck.forEach(q => q.color = q.color || "red");
     setupBox.classList.add("hidden");
     quizBox.classList.remove("hidden");
@@ -170,8 +196,7 @@ nextBtn.onclick = ()=> goNext();
 
 function updateColor(q, newColor){
   q.color = newColor;
-  // ✅ 同步更新 allData 中對應題目的顏色
-  const target = allData.find(d => d.題目 === q.題目 && d.小節 === q.小節);
+  const target = allData[currentSheet].find(d => d.題目 === q.題目 && d.小節 === q.小節);
   if(target) target.color = newColor;
 }
 
@@ -185,18 +210,17 @@ function showStats(){
   quizBox.classList.add("hidden");
   statBox.classList.remove("hidden");
 
-  const sectionData = allData.filter(q => q.小節 === currentSection);
+  const sectionData = allData[currentSheet].filter(q => q.小節 === currentSection);
   const counts = { red:0, yellow:0, green:0, blue:0 };
   sectionData.forEach(q => {
     const c = q.color || "red";
-    if (Object.prototype.hasOwnProperty.call(counts, c)) counts[c]++;
-    else counts.red++;
+    counts[c] = (counts[c] || 0) + 1;
   });
   const total = sectionData.length;
 
   document.getElementById("statResult").innerHTML =
     `紅：${counts.red}　黃：${counts.yellow}　綠：${counts.green}　藍：${counts.blue}　<small>（總計 ${total} 題）</small>`;
-  
+
   const bar = document.getElementById("progressContainer");
   bar.innerHTML = "";
   ["red","yellow","green","blue"].forEach(c=>{
@@ -208,7 +232,7 @@ function showStats(){
 }
 
 function filterColor(color){
-  deck = allData.filter(q => q.小節 === currentSection && q.color === color);
+  deck = allData[currentSheet].filter(q => q.小節 === currentSection && q.color === color);
   if(deck.length === 0){ alert("沒有這顏色的題目喔"); return; }
   idx = 0;
   statBox.classList.add("hidden");
@@ -217,7 +241,7 @@ function filterColor(color){
 }
 
 function restartAll(){
-  deck = allData.filter(q => q.小節 === currentSection);
+  deck = allData[currentSheet].filter(q => q.小節 === currentSection);
   idx = 0;
   statBox.classList.add("hidden");
   quizBox.classList.remove("hidden");
