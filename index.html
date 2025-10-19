@@ -1,281 +1,395 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0" />
 <title>天翔流自我強化檢核表</title>
 <style>
-body {
-  font-family: "Noto Sans TC", sans-serif;
-  background: #f4f5f7;
-  text-align: center;
-  margin: 0;
-  padding: 40px 0;
+:root{
+  --bg:#f4f5f7; --card:#fff; --muted:#64748b;
+  --red:#ef4444; --yellow:#f59e0b; --green:#22c55e; --blue:#3b82f6;
+  --barbg:#e5e7eb;
 }
-h1 {
-  font-size: 2em;
-  margin-bottom: 20px;
+*{box-sizing:border-box}
+body{font-family:"Noto Sans TC",sans-serif;background:var(--bg);margin:0;text-align:center;padding:28px 0}
+h1{margin:0 0 10px}
+p.desc{color:#555;margin:0 0 18px}
+.container{background:var(--card);border-radius:16px;box-shadow:0 0 10px rgba(0,0,0,.08);margin:14px auto;padding:16px;width:92%;max-width:900px;text-align:left}
+.section-header{font-weight:700;margin:10px 0 6px}
+.small{color:var(--muted);font-size:.92rem}
+.progressBar{width:100%;height:16px;background:var(--barbg);border-radius:8px;overflow:hidden;display:flex}
+.segment{height:100%}
+.red{background:var(--red)} .yellow{background:var(--yellow)} .green{background:var(--green)} .blue{background:var(--blue)}
+.btn{font-size:1rem;padding:9px 14px;border:none;border-radius:8px;cursor:pointer;margin:6px 6px 0 0}
+.btn-prim{background:#0ea5e9;color:#fff}
+.btn-dark{background:#334155;color:#fff}
+.btn-red{background:var(--red);color:#fff}
+.btn-ghost{background:#fff;border:1px solid #cbd5e1;color:#334155}
+.grid{display:grid;gap:10px}
+.grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:12px;cursor:pointer}
+.card:hover{box-shadow:0 4px 14px rgba(0,0,0,.08)}
+.row{display:flex;align-items:center;gap:8px;justify-content:space-between}
+.center{text-align:center}
+.q{font-weight:800;font-size:1.25rem;margin:10px 0}
+.ans{color:#000;font-size:1.25rem;margin:10px 0}
+.hidden{display:none}
+
+/* Spinner (齒輪風格) */
+.spinner-wrap{display:flex;align-items:center;justify-content:center;height:180px;flex-direction:column;gap:10px}
+.spinner{
+  width:44px;height:44px;border-radius:50%;
+  border:6px solid #cbd5e1;border-top-color:#0ea5e9;
+  animation:spin 1s linear infinite;
 }
-p.description {
-  color: #555;
-  margin-bottom: 25px;
-  font-size: 1.05em;
-}
-.container {
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 0 10px rgba(0,0,0,0.1);
-  margin: 0 auto;
-  padding: 20px;
-  width: 85%;
-  max-width: 720px;
-}
-button {
-  font-size: 1.1em;
-  padding: 10px 24px;
-  margin: 10px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-}
-#checkBtn { background: #008CBA; color: white; }
-#wrongBtn { background: #f44336; color: white; }
-#rightBtn { background: #4CAF50; color: white; }
-#nextBtn { background: #333; color: white; }
-.hidden { display: none; }
-.progressBar {
-  width: 100%;
-  height: 20px;
-  background: #ddd;
-  border-radius: 10px;
-  margin: 20px 0;
-  overflow: hidden;
-  display: flex;
-}
-.progressSegment { height: 100%; }
-.red { background: #f44336; }
-.yellow { background: #ffca28; }
-.green { background: #4caf50; }
-.blue { background: #2196f3; }
-#question, #answer {
-  color: black;
-  font-size: 1.3em;
-  margin: 15px 0;
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* 手機佈局 */
+@media (max-width:720px){
+  .grid-3{grid-template-columns:repeat(1,minmax(0,1fr))}
+  .grid-2{grid-template-columns:repeat(1,minmax(0,1fr))}
 }
 </style>
 </head>
 <body>
 <h1>天翔流自我強化檢核表</h1>
-<p class="description">選擇你要刷的單元 → 載入題庫 → 選擇小節 → 開始刷</p>
+<p class="desc">選擇你要刷的單元 → 載入題庫 → 選擇小節 → 開始刷</p>
 
-<div class="container" id="setupBox">
-  <label>選擇單元：</label>
-  <select id="unitSelect"></select>
-  <label>　選擇小節：</label>
-  <select id="sectionSelect"></select><br>
-  <button id="loadBtn">載入題庫</button>
+<!-- 首頁：單元 / 小節總覽 -->
+<div class="container" id="homeBox">
+  <div class="row" style="margin-bottom:8px">
+    <div class="small">以下依照試算表的分頁順序與題目出現順序排列</div>
+    <button id="refreshBtn" class="btn btn-ghost" title="重新抓取題庫">重新整理</button>
+  </div>
+  <div id="overview"></div>
 </div>
 
+<!-- 測驗畫面 -->
 <div class="container hidden" id="quizBox">
-  <h3 id="progress"></h3>
-  <h2 id="question"></h2>
-  <p id="answer" class="hidden"></p>
-  <div>
-    <button id="checkBtn">對答案</button>
-    <button id="wrongBtn" class="hidden">答錯</button>
-    <button id="rightBtn" class="hidden">答對</button>
-    <button id="nextBtn" class="hidden">下一題</button>
+  <div class="row small"><div id="crumb"></div><div id="progressText"></div></div>
+  <div id="qText" class="q"></div>
+  <div id="aText" class="ans hidden"></div>
+  <div class="center">
+    <button id="checkBtn" class="btn btn-prim">對答案</button>
+    <button id="wrongBtn" class="btn btn-red hidden">答錯</button>
+    <button id="rightBtn" class="btn btn-prim hidden">答對</button>
   </div>
 </div>
 
+<!-- 結果統計中（3秒） -->
+<div class="container hidden" id="computingBox">
+  <div class="spinner-wrap">
+    <div class="spinner"></div>
+    <div class="small">結果統計中，請稍候…</div>
+  </div>
+</div>
+
+<!-- 結算畫面 -->
 <div class="container hidden" id="statBox">
-  <h2>📊 統計結果</h2>
-  <div id="progressContainer" class="progressBar"></div>
-  <p id="statResult"></p>
-  <button onclick="filterColor('red')" class="red">只刷紅色</button>
-  <button onclick="filterColor('yellow')" class="yellow">只刷黃色</button>
-  <button onclick="filterColor('green')" class="green">只刷綠色</button>
-  <button onclick="filterColor('blue')" class="blue">只刷藍色</button><br>
-  <button onclick="restartAll()">全部重刷</button>
-  <button onclick="backToSetup()">回主畫面</button>
+  <div class="row"><div class="section-header" id="statTitle"></div>
+    <div><button id="homeBtn" class="btn btn-ghost">回首頁</button></div>
+  </div>
+  <div id="statSummary" class="small"></div>
+  <div id="statBar" class="progressBar" style="margin:10px 0 6px"></div>
+  <div class="row small" style="margin-bottom:12px"><div>選擇要重刷的題目顏色：</div></div>
+  <div class="row">
+    <div>
+      <button class="btn red"   onclick="startPracticeByColor('red')">只刷紅色</button>
+      <button class="btn yellow"onclick="startPracticeByColor('yellow')">只刷黃色</button>
+      <button class="btn green" onclick="startPracticeByColor('green')">只刷綠色</button>
+      <button class="btn blue"  onclick="startPracticeByColor('blue')">只刷藍色</button>
+      <button class="btn btn-dark" onclick="startPracticeByColor('all')">全部重刷</button>
+    </div>
+    <button id="clearAllBtn" class="btn btn-ghost">清除所有刷題紀錄</button>
+  </div>
 </div>
 
 <script>
-const sheetUrl = "https://script.google.com/macros/s/AKfycbyzdhcYNXrPhqtPh2jaIhoO3FNZ1r1FdxB7obTXKWosJ4HRWCRoMEWgLZUgqUs3lYtGEg/exec";
+/** ====== 基本設定 ====== */
+const API = "https://script.google.com/macros/s/AKfycbyzdhcYNXrPhqtPh2jaIhoO3FNZ1r1FdxB7obTXKWosJ4HRWCRoMEWgLZUgqUs3lYtGEg/exec";
+const LS_PREFIX = "quizProgress_"; // localStorage 前綴
+/** ====================== */
 
-let allData = {};
-let deck = [];
-let idx = 0;
-let currentSheet = "";
-let currentSection = "";
-
-const setupBox = document.getElementById("setupBox");
+const homeBox = document.getElementById("homeBox");
+const overview = document.getElementById("overview");
 const quizBox = document.getElementById("quizBox");
+const computingBox = document.getElementById("computingBox");
 const statBox = document.getElementById("statBox");
-const questionText = document.getElementById("question");
-const answerText = document.getElementById("answer");
-const progressText = document.getElementById("progress");
+
+const qText = document.getElementById("qText");
+const aText = document.getElementById("aText");
+const crumb = document.getElementById("crumb");
+const progressText = document.getElementById("progressText");
+
 const checkBtn = document.getElementById("checkBtn");
 const wrongBtn = document.getElementById("wrongBtn");
 const rightBtn = document.getElementById("rightBtn");
-const nextBtn = document.getElementById("nextBtn");
-const sectionSelect = document.getElementById("sectionSelect");
-const unitSelect = document.getElementById("unitSelect");
+const homeBtn = document.getElementById("homeBtn");
+const clearAllBtn = document.getElementById("clearAllBtn");
+const refreshBtn = document.getElementById("refreshBtn");
 
-function storageKey(sheet, section) {
-  return `quizProgress_${sheet}_${section}`;
-}
-
-// 🚀 自動抓所有分頁名稱
-async function loadSheetList(){
-  try{
-    const res = await fetch(sheetUrl + "?mode=sheets");
-    const data = await res.json();
-    const sheets = data.sheets || [];
-    if(sheets.length === 0) throw new Error("No sheets found");
-    unitSelect.innerHTML = sheets.map(s => `<option value="${s}">${s}</option>`).join("");
-  }catch(e){
-    alert("⚠️ 無法取得試算表分頁清單，請確認 Apps Script 有回傳 sheets 陣列。");
-  }
-}
-document.addEventListener("DOMContentLoaded", loadSheetList);
-
-document.getElementById("loadBtn").onclick = async ()=>{
-  try {
-    currentSheet = unitSelect.value;
-    const res = await fetch(sheetUrl + "?sheet=" + encodeURIComponent(currentSheet));
-    allData[currentSheet] = await res.json();
-    const sections = [...new Set(allData[currentSheet].map(q => q.小節))];
-    sectionSelect.innerHTML = "<option value=''>請選擇</option>" + sections.map(s => `<option>${s}</option>`).join("");
-  } catch (e) {
-    alert("⚠️ 無法載入資料，請確認 Apps Script 網址是否正確發布。");
-  }
+let meta = {
+  sheets: [],                                // 分頁（單元）清單（依試算表順序）
+  data: {},                                  // 每個單元的原始資料
+  sections: {},                               // 每個單元 → 原始小節順序（依出現順序）
 };
 
-sectionSelect.onchange = ()=>{
-  currentSection = sectionSelect.value;
-  if(currentSection){
-    deck = allData[currentSheet].filter(q => q.小節 === currentSection);
-    restoreProgress();
-    deck.forEach(q => q.color = q.color || "red");
-    setupBox.classList.add("hidden");
-    quizBox.classList.remove("hidden");
-    idx = 0;
-    showQuestion();
-  }
+let session = {
+  sheet: "", section: "",                     // 目前單元 / 小節
+  deck: [], idx: 0,                           // 當前練習的題組
+  working: [],                                // 目前小節的完整（可變色）資料，用於結算與保存
+  filterMode: "all",                          // 目前練習顏色
+  committed: false                            // 是否已完成並寫入 localStorage
 };
+
+/* ---------- 工具 ---------- */
+const keyOf = (sheet, section)=> `${LS_PREFIX}${sheet}__${section}`;
+const deepCopy = (obj)=> JSON.parse(JSON.stringify(obj));
+
+function countByColors(list){
+  const c = {red:0,yellow:0,green:0,blue:0};
+  list.forEach(x=> c[(x.color||"red")] = (c[(x.color||"red")]||0)+1 );
+  return c;
+}
+function renderBar(el, counts, total){
+  el.innerHTML = "";
+  ["red","yellow","green","blue"].forEach(color=>{
+    const seg = document.createElement("div");
+    seg.className = `segment ${color}`;
+    seg.style.width = (total? (counts[color]/total*100):0) + "%";
+    el.appendChild(seg);
+  });
+}
+
+/* ---------- 首頁：載入總覽 ---------- */
+async function loadSheets(){
+  const res = await fetch(API+"?mode=sheets",{cache:"no-store"});
+  const json = await res.json();
+  meta.sheets = json.sheets || [];
+}
+async function loadSheetData(sheet){
+  if(meta.data[sheet]) return; // 已載入
+  const res = await fetch(API+"?sheet="+encodeURIComponent(sheet),{cache:"no-store"});
+  const rows = await res.json();
+  // 建立小節順序（依出現順序）
+  const seen = new Set();
+  const order = [];
+  rows.forEach(r=>{
+    const s = (r["小節"]||"").toString().trim();
+    if(s && !seen.has(s)){ seen.add(s); order.push(s); }
+  });
+  meta.data[sheet] = rows.map(r=>({
+    編號: (r["編號"]||"").toString().trim(),
+    小節: (r["小節"]||"").toString().trim(),
+    題目: (r["題目"]||"").toString().trim(),
+    答案: (r["答案"]||"").toString().trim(),
+  })).filter(x=>x.題目);
+  meta.sections[sheet] = order;
+}
+
+// 依 localStorage 取得某小節保存的顏色（若無則不顯示比例）
+function getSavedSection(sheet, section){
+  const raw = localStorage.getItem(keyOf(sheet,section));
+  if(!raw) return null;
+  try{ return JSON.parse(raw); } catch{ return null; }
+}
+
+async function buildOverview(){
+  overview.innerHTML = "";
+  for(const sheet of meta.sheets){
+    await loadSheetData(sheet);
+    const wrap = document.createElement("div");
+    wrap.className = "card";
+    // 單元標題
+    const h = document.createElement("div");
+    h.className = "section-header";
+    h.textContent = sheet;
+    wrap.appendChild(h);
+
+    // 各小節
+    const grid = document.createElement("div");
+    grid.className = "grid grid-3";
+    for(const sec of meta.sections[sheet]){
+      const total = meta.data[sheet].filter(r=>r.小節===sec).length;
+      // 以 localStorage 紀錄為主；若沒有紀錄，四色為 0（顯示空條）
+      const saved = getSavedSection(sheet, sec);
+      const counts = saved ? countByColors(saved) : {red:0,yellow:0,green:0,blue:0};
+
+      const cell = document.createElement("div");
+      cell.className = "card";
+      cell.title = "點擊開始刷題";
+      cell.onclick = ()=> onChooseSection(sheet, sec); // 點擊小節
+      const title = document.createElement("div");
+      title.innerHTML = `<div class="row"><div>${sec}</div><div class="small">${saved? "已有紀錄":"尚無紀錄"}｜共 "+${total}+" 題</div></div>`;
+      const bar = document.createElement("div"); bar.className="progressBar"; bar.style.marginTop="6px";
+      renderBar(bar, counts, total);
+      cell.appendChild(title); cell.appendChild(bar);
+      grid.appendChild(cell);
+    }
+    wrap.appendChild(grid);
+    overview.appendChild(wrap);
+  }
+}
+
+/* 小節點擊：有紀錄 → 先看結算；無紀錄 → 直接開始 */
+function onChooseSection(sheet, section){
+  session.sheet = sheet;
+  session.section = section;
+  session.filterMode = "all";
+  session.committed = false;
+
+  // 構建 working（可變色的完整小節）
+  const base = meta.data[sheet].filter(r=>r.小節===section).map(x=>({...x,color:"red"}));
+  const saved = getSavedSection(sheet, section);
+  if(saved){
+    // 套回已存的顏色（以題目＋小節匹配）
+    base.forEach(b=>{
+      const m = saved.find(s=> s.題目===b.題目 && s.小節===b.小節);
+      if(m) b.color = m.color||"red";
+    });
+    session.working = base;
+    // 先顯示結算畫面（讓學生選顏色）——符合需求(1)
+    showStatScreen();
+  }else{
+    session.working = base;
+    startPracticeByColor("all"); // 直接開始
+  }
+}
+
+/* ---------- 練習控制 ---------- */
+function startPracticeByColor(mode){
+  session.filterMode = mode;
+  session.idx = 0;
+
+  session.deck = (mode==="all")
+    ? deepCopy(session.working)
+    : deepCopy(session.working.filter(q=> q.color===mode));
+
+  if(session.deck.length===0){
+    alert("這個顏色目前沒有題目唷");
+    return;
+  }
+  // 進入作答畫面
+  homeBox.classList.add("hidden");
+  statBox.classList.add("hidden");
+  computingBox.classList.add("hidden");
+  quizBox.classList.remove("hidden");
+  showQuestion();
+}
 
 function showQuestion(){
-  const q = deck[idx];
-  questionText.textContent = `${idx+1}. ${q.題目}`;
-  answerText.textContent = "答案：" + q.答案;
-  answerText.classList.add("hidden");
-  progressText.textContent = `第 ${idx+1}/${deck.length} 題　小節：${q.小節}`;
+  const q = session.deck[session.idx];
+  crumb.textContent = `${session.sheet}／${session.section}`;
+  progressText.textContent = `第 ${session.idx+1}/${session.deck.length} 題`;
+  qText.textContent = `${q.編號? (q.編號+". "):""}${q.題目}`;
+  aText.textContent = `答案：${q.答案}`;
+  aText.classList.add("hidden");
   checkBtn.classList.remove("hidden");
   wrongBtn.classList.add("hidden");
   rightBtn.classList.add("hidden");
-  nextBtn.classList.add("hidden");
 }
 
 checkBtn.onclick = ()=>{
-  answerText.classList.remove("hidden");
+  aText.classList.remove("hidden");
   checkBtn.classList.add("hidden");
   wrongBtn.classList.remove("hidden");
   rightBtn.classList.remove("hidden");
 };
 
 wrongBtn.onclick = ()=>{
-  updateColor(deck[idx], "red");
-  goNext();
+  applyColor(session.deck[session.idx], "red");
+  nextOrCompute();
 };
-
 rightBtn.onclick = ()=>{
-  const q = deck[idx];
-  if(q.color === "red") updateColor(q, "yellow");
-  else if(q.color === "yellow") updateColor(q, "green");
-  else if(q.color === "green") updateColor(q, "blue");
-  goNext();
+  const cur = session.deck[session.idx];
+  const c = cur.color||"red";
+  const next = (c==="red")?"yellow":(c==="yellow")?"green":(c==="green")?"blue":"blue";
+  applyColor(cur, next);
+  nextOrCompute();
 };
 
-nextBtn.onclick = ()=> goNext();
-
-function updateColor(q, newColor){
-  q.color = newColor;
-  const target = allData[currentSheet].find(d => d.題目 === q.題目 && d.小節 === q.小節);
-  if(target) target.color = newColor;
-  saveProgress();
+// 把顏色寫回 working（整個小節的真實狀態，只在結算時才保存到 localStorage）
+function applyColor(item, color){
+  item.color = color;
+  const w = session.working.find(x=> x.題目===item.題目 && x.小節===item.小節);
+  if(w) w.color = color;
 }
 
-function goNext(){
-  idx++;
-  if(idx >= deck.length) showStats();
-  else showQuestion();
-}
-
-function showStats(){
-  quizBox.classList.add("hidden");
-  statBox.classList.remove("hidden");
-
-  const sectionData = allData[currentSheet].filter(q => q.小節 === currentSection);
-  const counts = { red:0, yellow:0, green:0, blue:0 };
-  sectionData.forEach(q => {
-    const c = q.color || "red";
-    counts[c] = (counts[c] || 0) + 1;
-  });
-  const total = sectionData.length;
-
-  document.getElementById("statResult").innerHTML =
-    `紅：${counts.red}　黃：${counts.yellow}　綠：${counts.green}　藍：${counts.blue}　<small>（總計 ${total} 題）</small>`;
-
-  const bar = document.getElementById("progressContainer");
-  bar.innerHTML = "";
-  ["red","yellow","green","blue"].forEach(c=>{
-    const seg = document.createElement("div");
-    seg.classList.add("progressSegment", c);
-    seg.style.width = (counts[c]/total*100)+"%";
-    bar.appendChild(seg);
-  });
-}
-
-function saveProgress(){
-  const sectionData = allData[currentSheet].filter(q => q.小節 === currentSection);
-  localStorage.setItem(storageKey(currentSheet, currentSection), JSON.stringify(sectionData));
-}
-
-function restoreProgress(){
-  const saved = localStorage.getItem(storageKey(currentSheet, currentSection));
-  if(saved){
-    const savedData = JSON.parse(saved);
-    savedData.forEach(sd=>{
-      const match = allData[currentSheet].find(d => d.題目 === sd.題目 && d.小節 === sd.小節);
-      if(match) match.color = sd.color;
-    });
+function nextOrCompute(){
+  session.idx++;
+  if(session.idx >= session.deck.length){
+    // 顯示統計中（3秒），尚未寫入 localStorage → 若此時關頁，不採計
+    quizBox.classList.add("hidden");
+    computingBox.classList.remove("hidden");
+    setTimeout(()=>{
+      showStatScreen(true); // fromPractice = true
+      // 到這一刻才寫入 localStorage（完成一次練習）
+      saveSection(session.sheet, session.section, session.working);
+      session.committed = true;
+    }, 3000);
+  }else{
+    showQuestion();
   }
 }
 
-function filterColor(color){
-  deck = allData[currentSheet].filter(q => q.小節 === currentSection && q.color === color);
-  if(deck.length === 0){ alert("沒有這顏色的題目喔"); return; }
-  idx = 0;
-  statBox.classList.add("hidden");
-  quizBox.classList.remove("hidden");
-  showQuestion();
+/* ---------- 結算畫面 & 保存 ---------- */
+function saveSection(sheet, section, list){
+  localStorage.setItem(keyOf(sheet,section), JSON.stringify(list));
 }
 
-function restartAll(){
-  deck = allData[currentSheet].filter(q => q.小節 === currentSection);
-  deck.forEach(q => q.color = "red");
-  saveProgress();
-  idx = 0;
-  statBox.classList.add("hidden");
-  quizBox.classList.remove("hidden");
-  showQuestion();
+function clearAllProgress(){
+  Object.keys(localStorage)
+    .filter(k=>k.startsWith(LS_PREFIX))
+    .forEach(k=>localStorage.removeItem(k));
 }
 
-function backToSetup(){
-  statBox.classList.add("hidden");
-  setupBox.classList.remove("hidden");
+function showStatScreen(fromPractice=false){
+  // 切換畫面
+  quizBox.classList.add("hidden");
+  computingBox.classList.add("hidden");
+  statBox.classList.remove("hidden");
+  homeBox.classList.add("hidden");
+
+  document.getElementById("statTitle").textContent = `${session.sheet}／${session.section}`;
+
+  // 統計以「目前 working 狀態」為準（若是由首頁進來且有紀錄，就等同已保存過的狀態）
+  const counts = countByColors(session.working);
+  const total = session.working.length;
+  document.getElementById("statSummary").innerHTML =
+    `紅：${counts.red}　黃：${counts.yellow}　綠：${counts.green}　藍：${counts.blue}　<small>（總計 ${total} 題）</small>`;
+  renderBar(document.getElementById("statBar"), counts, total);
 }
+
+/* ---------- 首頁 / 清除 ---------- */
+homeBtn.onclick = ()=>{
+  statBox.classList.add("hidden");
+  computingBox.classList.add("hidden");
+  quizBox.classList.add("hidden");
+  homeBox.classList.remove("hidden");
+  buildOverview(); // 回首頁後刷新總覽
+};
+clearAllBtn.onclick = ()=>{
+  if(confirm("確定要清除所有刷題紀錄嗎？（所有單元與小節）")){
+    clearAllProgress();
+    homeBtn.onclick(); // 回首頁並刷新
+  }
+};
+refreshBtn.onclick = async ()=>{
+  overview.innerHTML = "載入中…";
+  await init();
+};
+
+/* ---------- 初始化 ---------- */
+async function init(){
+  homeBox.classList.remove("hidden");
+  quizBox.classList.add("hidden");
+  computingBox.classList.add("hidden");
+  statBox.classList.add("hidden");
+  await loadSheets();
+  await buildOverview();
+}
+init();
 </script>
 </body>
 </html>
