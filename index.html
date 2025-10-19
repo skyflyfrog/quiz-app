@@ -101,12 +101,13 @@ button {
 </div>
 
 <script>
+const sheetUrl = "https://script.google.com/macros/s/AKfycbyzdhcYNXrPhqtPh2jaIhoO3FNZ1r1FdxB7obTXKWosJ4HRWCRoMEWgLZUgqUs3lYtGEg/exec";
+
 let allData = {};
 let deck = [];
 let idx = 0;
 let currentSheet = "";
 let currentSection = "";
-const sheetUrl = "https://script.google.com/macros/s/AKfycbyzdhcYNXrPhqtPh2jaIhoO3FNZ1r1FdxB7obTXKWosJ4HRWCRoMEWgLZUgqUs3lYtGEg/exec";
 
 const setupBox = document.getElementById("setupBox");
 const quizBox = document.getElementById("quizBox");
@@ -121,7 +122,11 @@ const nextBtn = document.getElementById("nextBtn");
 const sectionSelect = document.getElementById("sectionSelect");
 const unitSelect = document.getElementById("unitSelect");
 
-// 🚀 自動抓分頁名稱
+function storageKey(sheet, section) {
+  return `quizProgress_${sheet}_${section}`;
+}
+
+// 🚀 自動抓所有分頁名稱
 async function loadSheetList(){
   try{
     const res = await fetch(sheetUrl + "?mode=sheets");
@@ -133,7 +138,6 @@ async function loadSheetList(){
     alert("⚠️ 無法取得試算表分頁清單，請確認 Apps Script 有回傳 sheets 陣列。");
   }
 }
-
 document.addEventListener("DOMContentLoaded", loadSheetList);
 
 document.getElementById("loadBtn").onclick = async ()=>{
@@ -152,6 +156,7 @@ sectionSelect.onchange = ()=>{
   currentSection = sectionSelect.value;
   if(currentSection){
     deck = allData[currentSheet].filter(q => q.小節 === currentSection);
+    restoreProgress();
     deck.forEach(q => q.color = q.color || "red");
     setupBox.classList.add("hidden");
     quizBox.classList.remove("hidden");
@@ -198,6 +203,7 @@ function updateColor(q, newColor){
   q.color = newColor;
   const target = allData[currentSheet].find(d => d.題目 === q.題目 && d.小節 === q.小節);
   if(target) target.color = newColor;
+  saveProgress();
 }
 
 function goNext(){
@@ -231,6 +237,22 @@ function showStats(){
   });
 }
 
+function saveProgress(){
+  const sectionData = allData[currentSheet].filter(q => q.小節 === currentSection);
+  localStorage.setItem(storageKey(currentSheet, currentSection), JSON.stringify(sectionData));
+}
+
+function restoreProgress(){
+  const saved = localStorage.getItem(storageKey(currentSheet, currentSection));
+  if(saved){
+    const savedData = JSON.parse(saved);
+    savedData.forEach(sd=>{
+      const match = allData[currentSheet].find(d => d.題目 === sd.題目 && d.小節 === sd.小節);
+      if(match) match.color = sd.color;
+    });
+  }
+}
+
 function filterColor(color){
   deck = allData[currentSheet].filter(q => q.小節 === currentSection && q.color === color);
   if(deck.length === 0){ alert("沒有這顏色的題目喔"); return; }
@@ -242,6 +264,8 @@ function filterColor(color){
 
 function restartAll(){
   deck = allData[currentSheet].filter(q => q.小節 === currentSection);
+  deck.forEach(q => q.color = "red");
+  saveProgress();
   idx = 0;
   statBox.classList.add("hidden");
   quizBox.classList.remove("hidden");
