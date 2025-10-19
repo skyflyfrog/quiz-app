@@ -95,21 +95,23 @@ button {
 let allData = [];
 let deck = [];
 let idx = 0;
-let setupBox = document.getElementById("setupBox");
-let quizBox = document.getElementById("quizBox");
-let statBox = document.getElementById("statBox");
-let questionText = document.getElementById("question");
-let answerText = document.getElementById("answer");
-let progressText = document.getElementById("progress");
-let checkBtn = document.getElementById("checkBtn");
-let wrongBtn = document.getElementById("wrongBtn");
-let rightBtn = document.getElementById("rightBtn");
-let nextBtn = document.getElementById("nextBtn");
-let sectionSelect = document.getElementById("sectionSelect");
+let currentSection = "";
+const sheetUrl = "https://script.google.com/macros/s/AKfycbyzdhcYNXrPhqtPh2jaIhoO3FNZ1r1FdxB7obTXKWosJ4HRWCRoMEWgLZUgqUs3lYtGEg/exec";
+
+const setupBox = document.getElementById("setupBox");
+const quizBox = document.getElementById("quizBox");
+const statBox = document.getElementById("statBox");
+const questionText = document.getElementById("question");
+const answerText = document.getElementById("answer");
+const progressText = document.getElementById("progress");
+const checkBtn = document.getElementById("checkBtn");
+const wrongBtn = document.getElementById("wrongBtn");
+const rightBtn = document.getElementById("rightBtn");
+const nextBtn = document.getElementById("nextBtn");
+const sectionSelect = document.getElementById("sectionSelect");
 
 document.getElementById("loadBtn").onclick = async ()=>{
   try {
-    const sheetUrl = "https://script.google.com/macros/s/AKfycbyzdhcYNXrPhqtPh2jaIhoO3FNZ1r1FdxB7obTXKWosJ4HRWCRoMEWgLZUgqUs3lYtGEg/exec";
     const res = await fetch(sheetUrl + "?sheet=自然B1L2養分");
     allData = await res.json();
     const sections = [...new Set(allData.map(q => q.小節))];
@@ -122,6 +124,7 @@ document.getElementById("loadBtn").onclick = async ()=>{
 sectionSelect.onchange = ()=>{
   const selected = sectionSelect.value;
   if(selected){
+    currentSection = selected;
     deck = allData.filter(q => q.小節 === selected);
     deck.forEach(q => q.color = q.color || "red");
     setupBox.classList.add("hidden");
@@ -151,19 +154,26 @@ checkBtn.onclick = ()=>{
 };
 
 wrongBtn.onclick = ()=>{
-  deck[idx].color = "red";
+  updateColor(deck[idx], "red");
   goNext();
 };
 
 rightBtn.onclick = ()=>{
   const q = deck[idx];
-  if(q.color === "red") q.color = "yellow";
-  else if(q.color === "yellow") q.color = "green";
-  else if(q.color === "green") q.color = "blue";
+  if(q.color === "red") updateColor(q, "yellow");
+  else if(q.color === "yellow") updateColor(q, "green");
+  else if(q.color === "green") updateColor(q, "blue");
   goNext();
 };
 
 nextBtn.onclick = ()=> goNext();
+
+function updateColor(q, newColor){
+  q.color = newColor;
+  // ✅ 同步更新 allData 中對應題目的顏色
+  const target = allData.find(d => d.題目 === q.題目 && d.小節 === q.小節);
+  if(target) target.color = newColor;
+}
 
 function goNext(){
   idx++;
@@ -171,19 +181,22 @@ function goNext(){
   else showQuestion();
 }
 
-// ✅ 修正版：正確統計顏色邏輯
 function showStats(){
   quizBox.classList.add("hidden");
   statBox.classList.remove("hidden");
+
+  const sectionData = allData.filter(q => q.小節 === currentSection);
   const counts = { red:0, yellow:0, green:0, blue:0 };
-  deck.forEach(q => {
+  sectionData.forEach(q => {
     const c = q.color || "red";
     if (Object.prototype.hasOwnProperty.call(counts, c)) counts[c]++;
     else counts.red++;
   });
-  const total = deck.length;
+  const total = sectionData.length;
+
   document.getElementById("statResult").innerHTML =
     `紅：${counts.red}　黃：${counts.yellow}　綠：${counts.green}　藍：${counts.blue}　<small>（總計 ${total} 題）</small>`;
+  
   const bar = document.getElementById("progressContainer");
   bar.innerHTML = "";
   ["red","yellow","green","blue"].forEach(c=>{
@@ -195,7 +208,7 @@ function showStats(){
 }
 
 function filterColor(color){
-  deck = allData.filter(q => q.小節 === sectionSelect.value && q.color === color);
+  deck = allData.filter(q => q.小節 === currentSection && q.color === color);
   if(deck.length === 0){ alert("沒有這顏色的題目喔"); return; }
   idx = 0;
   statBox.classList.add("hidden");
@@ -204,7 +217,7 @@ function filterColor(color){
 }
 
 function restartAll(){
-  deck = allData.filter(q => q.小節 === sectionSelect.value);
+  deck = allData.filter(q => q.小節 === currentSection);
   idx = 0;
   statBox.classList.add("hidden");
   quizBox.classList.remove("hidden");
