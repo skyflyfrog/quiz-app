@@ -5,6 +5,45 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0" />
 <title>天翔流自我強化檢核表</title>
 <style>
+/* --- 手機版版面優化 --- */
+@media (max-width: 720px) {
+  #subjectFilter {
+    flex-wrap: wrap;
+    gap: 6px 10px;
+    justify-content: flex-start;
+  }
+
+  #subjectFilter label {
+    flex: 0 0 28%;
+    display: flex;
+    align-items: center;
+  }
+
+  #subjectFilter button {
+    flex: 1 1 45%;
+    margin-top: 6px;
+  }
+
+  .container {
+    padding: 20px 14px;
+  }
+
+  .row.small {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .btn {
+    padding: 8px 12px;
+    font-size: 0.95rem;
+  }
+
+  .desc {
+    line-height: 1.5;
+  }
+}
+
 :root{color-scheme:light!important;}
 @media(prefers-color-scheme:dark){html,body{background-color:#f4f5f7!important;color:#000!important;}}
 :root{
