@@ -225,12 +225,52 @@ async function buildOverview(){
       const rows=meta.data[sheet].filter(r=>r.小節===sec);const total=rows.length;if(total===0)continue;
       const saved=getSavedSection(sheet,sec);const counts=saved?countByColors(saved):{red:0,yellow:0,green:0,blue:0};
       const cell=document.createElement("div");cell.className="card";cell.style.marginBottom="10px";cell.onclick=()=>onChooseSection(sheet,sec);
-      const title=document.createElement("div");title.innerHTML=`<div class='row'><div><b>${sec}</b></div><div class='small'>${saved?"已有紀錄":"尚無紀錄"}｜共 ${total} 題</div></div>`;
+const title=document.createElement("div");
+title.innerHTML=`
+  <div class='row'>
+    <div><b>${sec}</b></div>
+    <div class='small'>
+      ${saved ? "已有紀錄" : "尚無紀錄"}｜共 ${total} 題
+      <button class="btn btn-prim btn-sm" onclick="event.stopPropagation(); startPracticeSection('${sheet}','${sec}')">開始刷</button>
+      <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation(); viewFullSection('${sheet}','${sec}')">查看全表</button>
+    </div>
+  </div>`;
+
       const bar=document.createElement("div");bar.className="progressBar";bar.style.marginTop="6px";renderBar(bar,counts,total);
       cell.appendChild(title);cell.appendChild(bar);list.appendChild(cell);
     }
     wrap.appendChild(list);overview.appendChild(wrap);
   }
+}
+function startPracticeSection(sheet, section) {
+  session.sheet = sheet;
+  session.section = section;
+  const base = meta.data[sheet].filter(r => r.小節 === section).map(x => ({ ...x, color: "red" }));
+  const saved = getSavedSection(sheet, section);
+  if (saved) {
+    base.forEach(b => {
+      const m = saved.find(s => s.題目 === b.題目 && s.小節 === b.小節);
+      if (m) b.color = m.color || "red";
+    });
+  }
+  session.working = base;
+  startPracticeByColor("all");
+}
+
+// 「查看全表」彈窗
+function viewFullSection(sheet, section) {
+  const rows = meta.data[sheet].filter(r => r.小節 === section);
+  if (!rows.length) return alert("此小節無題目");
+  const list = rows.map((r, i) => `${i + 1}. ${r.題目}${r.答案 ? "<br>答案：" + r.答案 : ""}`).join("<hr>"); 
+  const popup = window.open("", "_blank", "width=800,height=600,scrollbars=yes");
+  popup.document.write(`
+    <html><head><title>${sheet} - ${section}</title>
+    <style>body{font-family:"Noto Sans TC",sans-serif;padding:20px;line-height:1.6;} hr{border:none;border-top:1px solid #ccc;margin:10px 0;}</style>
+    </head><body>
+    <h2>${sheet}／${section}</h2>
+    ${list}
+    </body></html>
+  `);
 }
 
 function onChooseSection(sheet,section){
