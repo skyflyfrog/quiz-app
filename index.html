@@ -95,20 +95,6 @@ img.question-img{max-width:100%;border-radius:10px;margin:10px 0}
 <p class="desc">紅：刷爆0輪　｜　黃：刷爆1輪　｜　綠：刷爆2輪　｜　藍：刷爆3輪</p>
 
 <div class="container" id="homeBox">
-  <div class="row small" style="margin-bottom:10px">
-    <label for="bookFilter">選擇冊別：</label>
-    <select id="bookFilter" class="btn btn-ghost">
-      <option value="all">全部</option>
-      <option value="B1">B1</option>
-      <option value="B2">B2</option>
-      <option value="B3">B3</option>
-      <option value="B4">B4</option>
-      <option value="B5">B5</option>
-      <option value="B6">B6</option>
-      <option value="高中">高中</option>
-    </select>
-  </div>
-
   <div id="subjectFilter" class="row small" style="margin-bottom:10px">
     <label><input type="checkbox" value="國文">國文</label>
     <label><input type="checkbox" value="英文">英文</label>
@@ -120,7 +106,6 @@ img.question-img{max-width:100%;border-radius:10px;margin:10px 0}
     <button id="selectAllBtn" class="btn btn-ghost">全科勾選</button>
     <button id="clearAllBtn2" class="btn btn-ghost">全科取消</button>
   </div>
-
   <div class="row" style="margin-bottom:8px">
     <div class="small">勾選欲載入科目後顯示｜登入者：<span id="userNameDisplay"></span></div>
     <button id="refreshBtn" class="btn btn-ghost">重新整理</button>
@@ -210,24 +195,15 @@ async function buildOverview(){
   overview.innerHTML="";
   const selectedSubjects=[...document.querySelectorAll('#subjectFilter input:checked')].map(x=>x.value);
   if(selectedSubjects.length===0){overview.textContent="請先勾選科目";return;}
-
-  // 冊別篩選
-  const bookSelect=document.getElementById("bookFilter");
-  const selectedBook=bookSelect.value;
-
   for(const sheet of meta.sheets){
     if(!selectedSubjects.some(s=>sheet.startsWith(s)))continue;
-    if(selectedBook!=='all'&&!sheet.includes(selectedBook))continue;
     await loadSheetData(sheet);
     const wrap=document.createElement("div");wrap.className="card";
     const h=document.createElement("div");h.className="section-header";h.textContent=sheet;wrap.appendChild(h);
     const list=document.createElement("div");
     for(const sec of meta.sections[sheet]){
-      const rows=meta.data[sheet].filter(r=>r.小節===sec);
-      const total=rows.length;
-      if(total===0)continue;
-      const saved=getSavedSection(sheet,sec);
-      const counts=saved?countByColors(saved):{red:0,yellow:0,green:0,blue:0};
+      const rows=meta.data[sheet].filter(r=>r.小節===sec);const total=rows.length;if(total===0)continue;
+      const saved=getSavedSection(sheet,sec);const counts=saved?countByColors(saved):{red:0,yellow:0,green:0,blue:0};
       const cell=document.createElement("div");cell.className="card";cell.style.marginBottom="10px";cell.onclick=()=>onChooseSection(sheet,sec);
       const title=document.createElement("div");title.innerHTML=`<div class='row'><div><b>${sec}</b></div><div class='small'>${saved?"已有紀錄":"尚無紀錄"}｜共 ${total} 題</div></div>`;
       const bar=document.createElement("div");bar.className="progressBar";bar.style.marginTop="6px";renderBar(bar,counts,total);
@@ -237,9 +213,66 @@ async function buildOverview(){
   }
 }
 
-document.getElementById("bookFilter").onchange=()=>buildOverview();
+function onChooseSection(sheet,section){
+  session.sheet=sheet;session.section=section;session.filterMode="all";session.committed=false;
+  const base=meta.data[sheet].filter(r=>r.小節===section).map(x=>({...x,color:"red"}));
+  const saved=getSavedSection(sheet,section);
+  if(saved){base.forEach(b=>{const m=saved.find(s=>s.題目===b.題目&&s.小節===b.小節);if(m)b.color=m.color||"red";});session.working=base;showStatScreen();}
+  else{session.working=base;startPracticeByColor("all");}
+}
 
+function startPracticeByColor(mode){
+  session.filterMode=mode;session.idx=0;
+  session.deck=(mode==="all")?deepCopy(session.working):deepCopy(session.working.filter(q=>q.color===mode));
+  if(session.deck.length===0){alert("這個顏色目前沒有題目唷");return;}
+  homeBox.classList.add("hidden");statBox.classList.add("hidden");computingBox.classList.add("hidden");quizBox.classList.remove("hidden");
+  showQuestion();
+}
+
+function extractImageUrl(text){const m=text.match(/https?:\/\/[^\s"<]+/);if(!m)return null;const u=m[0];if(/\.(png|jpg|jpeg|gif)/i.test(u))return u;if(/drive\.google\.com\/uc\?id=/i.test(u))return u;return null;}
+function showQuestion(){
+  const q=session.deck[session.idx];
+  crumb.textContent=`${session.sheet}／${session.section}`;
+  progressText.textContent=`第 ${session.idx+1}/${session.deck.length} 題`;
+  const qtext=q.題目.replace(/https?:\/\/[^\s"<]+/g,"");
+  qText.textContent=`${q.編號?(q.編號+". "):""}${qtext}`;
+  aText.textContent=`答案：${q.答案}`;aText.classList.add("hidden");
+  const imgUrl=q.圖片||extractImageUrl(q.題目);
+  if(imgUrl){imgWrap.innerHTML=`<img class="question-img" src="${imgUrl}" alt="題目圖片">`;imgWrap.classList.remove("hidden");}
+  else{imgWrap.innerHTML="";imgWrap.classList.add("hidden");}
+  checkBtn.classList.remove("hidden");wrongBtn.classList.add("hidden");rightBtn.classList.add("hidden");
+}
+
+checkBtn.onclick=()=>{aText.classList.remove("hidden");checkBtn.classList.add("hidden");wrongBtn.classList.remove("hidden");rightBtn.classList.remove("hidden");};
+wrongBtn.onclick=()=>{applyColor(session.deck[session.idx],"red");nextOrCompute();};
+rightBtn.onclick=()=>{const cur=session.deck[session.idx];const c=cur.color||"red";const next=(c==="red")?"yellow":(c==="yellow")?"green":(c==="green")?"blue":"blue";applyColor(cur,next);nextOrCompute();};
+function applyColor(item,color){item.color=color;const w=session.working.find(x=>x.題目===item.題目&&x.小節===item.小節);if(w)w.color=color;}
+function nextOrCompute(){
+  session.idx++;
+  if(session.idx>=session.deck.length){
+    quizBox.classList.add("hidden");computingBox.classList.remove("hidden");
+    setTimeout(()=>{
+      showStatScreen(true);
+      saveSection(session.sheet,session.section,session.working);
+      session.committed=true;
+    },1500);
+  }else showQuestion();
+}
+
+cancelBtn.onclick=()=>{if(confirm("確定要回首頁？本次刷題將不紀錄進度。")){quizBox.classList.add("hidden");homeBox.classList.remove("hidden");buildOverview();}};
+function saveSection(sheet,section,list){localStorage.setItem(keyOf(sheet,section),JSON.stringify(list));}
+function showStatScreen(){quizBox.classList.add("hidden");computingBox.classList.add("hidden");statBox.classList.remove("hidden");homeBox.classList.add("hidden");document.getElementById("statTitle").textContent=`${session.sheet}／${session.section}`;const counts=countByColors(session.working);const total=session.working.length;document.getElementById("statSummary").innerHTML=`紅：${counts.red}　黃：${counts.yellow}　綠：${counts.green}　藍：${counts.blue}　<small>（共 ${total} 題）</small>`;renderBar(document.getElementById("statBar"),counts,total);}
+
+homeBtn.onclick=()=>{statBox.classList.add("hidden");computingBox.classList.add("hidden");quizBox.classList.add("hidden");homeBox.classList.remove("hidden");buildOverview();};
+clearAllBtn.onclick=()=>{if(confirm("確定要清除所有紀錄嗎？")){Object.keys(localStorage).filter(k=>k.startsWith(LS_PREFIX)).forEach(k=>localStorage.removeItem(k));homeBtn.onclick();}};
+refreshBtn.onclick=async()=>{overview.innerHTML="載入中…";meta={sheets:[],data:{},sections:{}};await init();};
+
+document.getElementById("selectAllBtn").onclick=()=>{document.querySelectorAll('#subjectFilter input').forEach(cb=>cb.checked=true);buildOverview();};
+document.getElementById("clearAllBtn2").onclick=()=>{document.querySelectorAll('#subjectFilter input').forEach(cb=>cb.checked=false);overview.innerHTML="請先勾選科目";};
 document.querySelectorAll('#subjectFilter input').forEach(cb=>cb.onchange=()=>buildOverview());
+
+async function init(){try{await loadSheets();await buildOverview();}catch(e){overview.innerHTML="⚠️ 載入失敗，請確認 Apps Script 可公開讀取。";console.error(e);} }
+init();
 </script>
 </body>
 </html>
