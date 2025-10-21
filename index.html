@@ -263,21 +263,30 @@ function startPracticeSection(sheet, section) {
   startPracticeByColor("all");
 }
 
-// 「查看全表」彈窗
+// 「查看全表」彈窗（加強版：強制解析題目內圖片）
 function viewFullSection(sheet, section) {
   const rows = meta.data[sheet].filter(r => r.小節 === section);
   if (!rows.length) return alert("此小節無題目");
 
   const list = rows.map((r, i) => {
-    // 嘗試從圖片欄或題目文字中取出圖片網址
-    const imgUrl = r.圖片 || extractImageUrl(r.題目);
-    const imgHTML = imgUrl
-      ? `<img src="${imgUrl}" style="max-width:100%;border-radius:8px;margin-top:6px;">`
-      : "";
+    // 優先取「圖片」欄，其次從題目文字中解析 <img> 或網址
+    let imgHTML = "";
+    if (r.圖片) {
+      imgHTML = `<img src="${r.圖片}" referrerpolicy="no-referrer" style="max-width:100%;border-radius:8px;margin-top:6px;">`;
+    } else if (r.題目.includes("img")) {
+      // 直接保留題目中的圖片標籤
+      imgHTML = r.題目.match(/<img[^>]*>/gi)?.join("") || "";
+    } else {
+      // 嘗試從文字中擷取網址（若題目只有連結沒 <img>）
+      const urlMatch = r.題目.match(/https?:\/\/[^\s'"]+\.(?:png|jpg|jpeg|gif)/i);
+      if (urlMatch) {
+        imgHTML = `<img src="${urlMatch[0]}" referrerpolicy="no-referrer" style="max-width:100%;border-radius:8px;margin-top:6px;">`;
+      }
+    }
 
     return `
       <div style="margin-bottom:16px">
-        <b>${i + 1}. ${r.題目}</b><br>
+        <b>${i + 1}. ${r.題目.replace(/<img[^>]*>/gi, "").trim()}</b><br>
         ${imgHTML}
         ${r.答案 ? `<div>答案：${r.答案}</div>` : ""}
         <hr>
@@ -291,7 +300,7 @@ function viewFullSection(sheet, section) {
     <style>
       body{font-family:"Noto Sans TC",sans-serif;padding:20px;line-height:1.6;}
       hr{border:none;border-top:1px solid #ccc;margin:10px 0;}
-      img{display:block;margin-top:6px;margin-bottom:6px;}
+      img{display:block;margin:10px 0;border-radius:8px;}
     </style>
     </head><body>
     <h2>${sheet}／${section}</h2>
@@ -299,6 +308,7 @@ function viewFullSection(sheet, section) {
     </body></html>
   `);
 }
+
 
 
 
