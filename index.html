@@ -95,6 +95,21 @@ img.question-img{max-width:100%;border-radius:10px;margin:10px 0}
 <p class="desc">紅：刷爆0輪　｜　黃：刷爆1輪　｜　綠：刷爆2輪　｜　藍：刷爆3輪</p>
 
 <div class="container" id="homeBox">
+  <!-- 新增冊別篩選 -->
+  <div class="row small" style="margin-bottom:10px">
+    <label for="bookSelect">冊別：</label>
+    <select id="bookSelect" class="btn btn-ghost">
+      <option value="all">全部</option>
+      <option value="B1">B1</option>
+      <option value="B2">B2</option>
+      <option value="B3">B3</option>
+      <option value="B4">B4</option>
+      <option value="B5">B5</option>
+      <option value="B6">B6</option>
+      <option value="高中">高中</option>
+    </select>
+  </div>
+
   <div id="subjectFilter" class="row small" style="margin-bottom:10px">
     <label><input type="checkbox" value="國文">國文</label>
     <label><input type="checkbox" value="英文">英文</label>
@@ -106,6 +121,7 @@ img.question-img{max-width:100%;border-radius:10px;margin:10px 0}
     <button id="selectAllBtn" class="btn btn-ghost">全科勾選</button>
     <button id="clearAllBtn2" class="btn btn-ghost">全科取消</button>
   </div>
+
   <div class="row" style="margin-bottom:8px">
     <div class="small">勾選欲載入科目後顯示｜登入者：<span id="userNameDisplay"></span></div>
     <button id="refreshBtn" class="btn btn-ghost">重新整理</button>
@@ -113,6 +129,7 @@ img.question-img{max-width:100%;border-radius:10px;margin:10px 0}
   <div id="overview">請先勾選科目</div>
 </div>
 
+<!-- 其餘區塊維持原樣 -->
 <div class="container hidden" id="quizBox">
   <div class="row small"><div id="crumb"></div><div id="progressText"></div></div>
   <div id="qText" class="q"></div>
@@ -159,7 +176,6 @@ if(!userName){userName=prompt("請輸入您的姓名：");if(!userName)userName=
 document.getElementById("userNameDisplay").textContent=userName;
 
 const LS_PREFIX=`quizProgress_${userName}_`;
-
 const overview=document.getElementById("overview");
 const homeBox=document.getElementById("homeBox");
 const quizBox=document.getElementById("quizBox");
@@ -194,9 +210,13 @@ async function loadSheetData(sheet){if(meta.data[sheet])return;const r=await fet
 async function buildOverview(){
   overview.innerHTML="";
   const selectedSubjects=[...document.querySelectorAll('#subjectFilter input:checked')].map(x=>x.value);
+  const selectedBook=document.getElementById("bookSelect").value;
   if(selectedSubjects.length===0){overview.textContent="請先勾選科目";return;}
   for(const sheet of meta.sheets){
-    if(!selectedSubjects.some(s=>sheet.startsWith(s)))continue;
+    const subjectMatch=selectedSubjects.some(s=>sheet.startsWith(s));
+    const bookMatch=(selectedBook==="all"||sheet.includes(selectedBook));
+    if(!subjectMatch||!bookMatch)continue;
+
     await loadSheetData(sheet);
     const wrap=document.createElement("div");wrap.className="card";
     const h=document.createElement("div");h.className="section-header";h.textContent=sheet;wrap.appendChild(h);
@@ -270,6 +290,7 @@ refreshBtn.onclick=async()=>{overview.innerHTML="載入中…";meta={sheets:[],d
 document.getElementById("selectAllBtn").onclick=()=>{document.querySelectorAll('#subjectFilter input').forEach(cb=>cb.checked=true);buildOverview();};
 document.getElementById("clearAllBtn2").onclick=()=>{document.querySelectorAll('#subjectFilter input').forEach(cb=>cb.checked=false);overview.innerHTML="請先勾選科目";};
 document.querySelectorAll('#subjectFilter input').forEach(cb=>cb.onchange=()=>buildOverview());
+document.getElementById("bookSelect").onchange=()=>buildOverview(); // 新增冊別選單事件
 
 async function init(){try{await loadSheets();await buildOverview();}catch(e){overview.innerHTML="⚠️ 載入失敗，請確認 Apps Script 可公開讀取。";console.error(e);} }
 init();
