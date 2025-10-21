@@ -122,10 +122,13 @@ img.question-img{max-width:100%;border-radius:10px;margin:10px 0}
     <button id="clearAllBtn2" class="btn btn-ghost">全科取消</button>
   </div>
 
-  <div class="row" style="margin-bottom:8px">
-    <div class="small">勾選欲載入科目後顯示｜登入者：<span id="userNameDisplay"></span></div>
+<div class="row" style="margin-bottom:8px">
+  <div class="small">勾選欲載入科目後顯示｜登入者：<span id="userNameDisplay"></span></div>
+  <div>
+    <button id="guideBtn" class="btn btn-ghost">使用說明</button>
     <button id="refreshBtn" class="btn btn-ghost">重新整理</button>
   </div>
+</div>
   <div id="overview">請先勾選科目</div>
 </div>
 
@@ -335,5 +338,41 @@ document.getElementById("bookSelect").onchange=()=>buildOverview(); // 新增冊
 async function init(){try{await loadSheets();await buildOverview();}catch(e){overview.innerHTML="⚠️ 載入失敗，請確認 Apps Script 可公開讀取。";console.error(e);} }
 init();
 </script>
+// 使用說明彈窗控制
+const guideBtn = document.getElementById("guideBtn");
+const guideModal = document.getElementById("guideModal");
+const closeGuideBtn = document.getElementById("closeGuideBtn");
+
+guideBtn.onclick = () => guideModal.classList.remove("hidden");
+closeGuideBtn.onclick = () => guideModal.classList.add("hidden");
+guideModal.onclick = (e) => {
+  if (e.target === guideModal) guideModal.classList.add("hidden");
+};
+
+
+<!-- 使用說明彈窗 -->
+<div id="guideModal" class="hidden"
+  style="position:fixed;inset:0;background:rgba(0,0,0,0.5);
+         display:flex;align-items:center;justify-content:center;
+         z-index:999;">
+  <div style="background:white;border-radius:12px;max-width:800px;width:90%;
+              padding:24px;text-align:left;line-height:1.8;
+              overflow-y:auto;max-height:80vh;">
+    <h2 style="margin-top:0;">★使用說明書（天翔流高速重複刷題）</h2>
+    <ol>
+      <li>首先，快速瀏覽一次課本或講義，把每個字都詳讀過。（控制在二十分鐘以內）</li>
+      <li>讀完課本或講義後，開啟本網頁，最上方先選擇冊別，再將你要刷的科目打勾，會跳出該冊已選科目的檢核表清單。</li>
+      <li>點選你要刷的單元與小節，最右側的「查看全表」，將整份題庫快速瀏覽一遍（控制在十分鐘以內，不需在意有無背熟）。</li>
+      <li>回到首頁（電腦版關掉彈窗，手機版按上一頁），點選「開始刷」進入刷題畫面。2 秒內答不出就立刻點選「對答案」，答對就點選「答對」，忘記或答錯就點選「答錯」。</li>
+      <li>全部回答完畢後，會進入結算畫面，依照你答對的次數，題目會逐漸從紅色變成黃色→綠色→藍色。點選紅色的方塊，重複刷你答錯的題目，直到所有題目變成黃色，我們稱為「刷爆 1 輪」。</li>
+      <li>刷爆 1 輪之後，就可以立刻去寫題目驗證自己的實力。</li>
+      <li>每隔 1 小時以上，有空再來刷爆第 2～3 輪，以獲得更長久和穩固的記憶。</li>
+    </ol>
+    <div style="text-align:right;margin-top:10px;">
+      <button id="closeGuideBtn" class="btn btn-prim">關閉</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
