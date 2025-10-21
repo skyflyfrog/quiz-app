@@ -338,15 +338,20 @@ document.getElementById("bookSelect").onchange=()=>buildOverview(); // 新增冊
 async function init(){try{await loadSheets();await buildOverview();}catch(e){overview.innerHTML="⚠️ 載入失敗，請確認 Apps Script 可公開讀取。";console.error(e);} }
 init();
 // 使用說明彈窗控制
-const guideBtn = document.getElementById("guideBtn");
-const guideModal = document.getElementById("guideModal");
-const closeGuideBtn = document.getElementById("closeGuideBtn");
+window.addEventListener("DOMContentLoaded", () => {
+  const guideBtn = document.getElementById("guideBtn");
+  const guideModal = document.getElementById("guideModal");
+  const closeGuideBtn = document.getElementById("closeGuideBtn");
 
-guideBtn.onclick = () => guideModal.classList.remove("hidden");
-closeGuideBtn.onclick = () => guideModal.classList.add("hidden");
-guideModal.onclick = (e) => {
-  if (e.target === guideModal) guideModal.classList.add("hidden");
-};
+  if (!guideBtn || !guideModal || !closeGuideBtn) return; // 預防性保護
+
+  guideBtn.onclick = () => guideModal.classList.remove("hidden");
+  closeGuideBtn.onclick = () => guideModal.classList.add("hidden");
+  guideModal.onclick = (e) => {
+    if (e.target === guideModal) guideModal.classList.add("hidden");
+  };
+});
+
 </script>
 
 
@@ -359,7 +364,7 @@ guideModal.onclick = (e) => {
   <div style="background:white;border-radius:12px;max-width:800px;width:90%;
               padding:24px;text-align:left;line-height:1.8;
               overflow-y:auto;max-height:80vh;">
-    <h2 style="margin-top:0;">★使用說明書（天翔流高速重複刷題）</h2>
+    <h2 style="margin-top:0;">★使用說明書（天翔流高速重複刷）</h2>
     <ol>
       <li>首先，快速瀏覽一次課本或講義，把每個字都詳讀過。（控制在二十分鐘以內）</li>
       <li>讀完課本或講義後，開啟本網頁，最上方先選擇冊別，再將你要刷的科目打勾，會跳出該冊已選科目的檢核表清單。</li>
