@@ -267,17 +267,40 @@ function startPracticeSection(sheet, section) {
 function viewFullSection(sheet, section) {
   const rows = meta.data[sheet].filter(r => r.小節 === section);
   if (!rows.length) return alert("此小節無題目");
-  const list = rows.map((r, i) => `${i + 1}. ${r.題目}${r.答案 ? "<br>答案：" + r.答案 : ""}`).join("<hr>"); 
+
+  const list = rows.map((r, i) => {
+    // 嘗試從圖片欄或題目文字中取出圖片網址
+    const imgUrl = r.圖片 || extractImageUrl(r.題目);
+    const imgHTML = imgUrl
+      ? `<img src="${imgUrl}" style="max-width:100%;border-radius:8px;margin-top:6px;">`
+      : "";
+
+    return `
+      <div style="margin-bottom:16px">
+        <b>${i + 1}. ${r.題目}</b><br>
+        ${imgHTML}
+        ${r.答案 ? `<div>答案：${r.答案}</div>` : ""}
+        <hr>
+      </div>
+    `;
+  }).join("");
+
   const popup = window.open("", "_blank", "width=800,height=600,scrollbars=yes");
   popup.document.write(`
-    <html><head><title>${sheet} - ${section}</title>
-    <style>body{font-family:"Noto Sans TC",sans-serif;padding:20px;line-height:1.6;} hr{border:none;border-top:1px solid #ccc;margin:10px 0;}</style>
+    <html><head><title>${sheet}／${section}</title>
+    <style>
+      body{font-family:"Noto Sans TC",sans-serif;padding:20px;line-height:1.6;}
+      hr{border:none;border-top:1px solid #ccc;margin:10px 0;}
+      img{display:block;margin-top:6px;margin-bottom:6px;}
+    </style>
     </head><body>
     <h2>${sheet}／${section}</h2>
     ${list}
     </body></html>
   `);
 }
+
+
 
 function onChooseSection(sheet,section){
   session.sheet=sheet;session.section=section;session.filterMode="all";session.committed=false;
