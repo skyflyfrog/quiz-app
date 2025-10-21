@@ -337,7 +337,6 @@ document.getElementById("bookSelect").onchange=()=>buildOverview(); // 新增冊
 
 async function init(){try{await loadSheets();await buildOverview();}catch(e){overview.innerHTML="⚠️ 載入失敗，請確認 Apps Script 可公開讀取。";console.error(e);} }
 init();
-</script>
 // 使用說明彈窗控制
 const guideBtn = document.getElementById("guideBtn");
 const guideModal = document.getElementById("guideModal");
@@ -348,6 +347,8 @@ closeGuideBtn.onclick = () => guideModal.classList.add("hidden");
 guideModal.onclick = (e) => {
   if (e.target === guideModal) guideModal.classList.add("hidden");
 };
+</script>
+
 
 
 <!-- 使用說明彈窗 -->
